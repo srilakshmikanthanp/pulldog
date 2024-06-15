@@ -90,7 +90,7 @@ DisableFormat:   false
 EmptyLineAfterAccessModifier: Always
 EmptyLineBeforeAccessModifier: Always
 ExperimentalAutoDetectBinPacking: false
-PackConstructorInitializers: NextLines
+PackConstructorInitializers: NextLine
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 AllowAllConstructorInitializersOnNextLine: true
 FixNamespaceComments: true

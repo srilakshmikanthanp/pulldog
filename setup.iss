@@ -1,4 +1,4 @@
-; This Script used to build installer for clipbird application using inno setup
+; This Script used to build installer for pulldog application using inno setup
 
 ; constants used in the script
 #define PulldogPublisher "srilakshmikanthanp"

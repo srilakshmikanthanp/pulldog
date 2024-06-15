@@ -15,7 +15,7 @@ class Storage : public QObject {
   QSettings *settings = new QSettings("srilakshmikanthanp", "pulldog");
 
  private: // groups
-  const char* configGroup  = "config";
+  const char* filesGroup  = "files";
 
  private: // keys
   const char* paths = "paths";
@@ -41,6 +41,31 @@ class Storage : public QObject {
    * @brief Destroy the SQLStore object
    */
   virtual ~Storage() = default;
+
+  /**
+   * @brief Set the paths
+   */
+  void setPaths(const QStringList& paths);
+
+  /**
+   * @brief Get all the paths
+   */
+  QStringList getPaths();
+
+  /**
+   * @brief Remove all the paths
+   */
+  void clearPaths();
+
+  /**
+   * @brief Add Path to store
+   */
+  void addPath(const QString& path);
+
+  /**
+   * @brief Remove path from store
+   */
+  void removePath(const QString& path);
 
   /**
    * @brief Instance of the storage

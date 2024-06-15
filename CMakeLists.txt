@@ -71,6 +71,15 @@ FetchContent_Declare(SingleApplication
 # Make Available SingleApplication
 FetchContent_MakeAvailable(SingleApplication)
 
+# Fetch https://github.com/SpartanJ/efsw.git
+FetchContent_Declare(efsw
+  GIT_REPOSITORY https://github.com/SpartanJ/efsw.git
+  GIT_TAG        1.4.0
+)
+
+# Make Available efsw
+FetchContent_MakeAvailable(efsw)
+
 # glob pattern for main cpp files exclude
 file(GLOB_RECURSE main_cpp *.cpp)
 
@@ -122,6 +131,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 # Link libraries
 target_link_libraries(pulldog
   PRIVATE SingleApplication::SingleApplication
+  PRIVATE efsw
   PRIVATE Qt6::Widgets
   PRIVATE Qt6::Network
   PRIVATE Qt6::Concurrent)
