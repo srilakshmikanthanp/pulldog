@@ -1,0 +1,39 @@
+#pragma once  // Header guard see https://en.wikipedia.org/wiki/Include_guard
+
+// Copyright (c) 2023 Sri Lakshmi Kanthan P
+//
+// This software is released under the MIT License.
+// https://opensource.org/licenses/MIT
+
+// Application Version
+#define PULLDOG_VERSION        "@VERSION@"
+
+// Application UUID
+#define PULLDOG_UUID           "@UUID@"
+
+// Application Name
+#define PULLDOG_NAME           "@CMAKE_PROJECT_NAME@"
+
+// Application main.qss file
+#define PULLDOG_LIGHT_QSS_PATH "@PULLDOG_LIGHT_QSS_PATH@"
+
+// Application main.qss file
+#define PULLDOG_DARK_QSS_PATH  "@PULLDOG_DARK_QSS_PATH@"
+
+// Application Logo
+#define PULLDOG_LOGO           "@PULLDOG_LOGO_PATH@"
+
+// Application Home page
+#define PULLDOG_HOMEPAGE       "@PULLDOG_HOMEPAGE@"
+
+// Application Issue page
+#define PULLDOG_ISSUEPAGE      "@PULLDOG_ISSUEPAGE@"
+
+// Application Donate page
+#define PULLDOG_DONATE         "@DONATE_URL@"
+
+// Application Organization name
+#define PULLDOG_ORG_NAME       "@PULLDOG_ORGANIZATION_NAME@"
+
+// Log statement for debug
+#define LOG(msg)               (std::string(__FILE__) + ":" + std::to_string(__LINE__) + " " + msg).c_str()

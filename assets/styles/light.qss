@@ -1,0 +1,181 @@
+/**
+ * Copyright (c) 2023 Sri Lakshmi Kanthan P
+ *
+ * This software is released under the MIT License.
+ * https://opensource.org/licenses/MIT
+ */
+
+/*********************** Common to All ************************/
+
+QFrame, QWidget {
+  background: #f9f9f9; /* Light background color */
+  color: #000000; /* Dark text color */
+  font-family: Segoe UI, sans-serif; /* Windows 11 font */
+  margin: 2px 0px 2px 0px;
+  font-weight: 550;
+}
+
+QFrame {
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+QLabel {
+  color: #000000;
+}
+
+QPushButton {
+  background-color: #ededed; /* Windows 11 accent color */
+  color: #000000; /* Light text on the button */
+  border: none;
+  border-radius: 5px;
+  padding: 6px;
+}
+
+QPushButton:hover {
+  background-color: #167dff; /* Slightly darker accent color on hover */
+  color: #f9f9f9;
+}
+
+QTabWidget::pane {
+  background: #f9f9f9;
+  border: none;
+  margin: 0px;
+  padding: 0px;
+}
+
+QTabWidget::tab-bar {
+  alignment: center;
+}
+
+QTabBar::tab {
+  border-bottom: 3px solid #f9f9f9;
+  padding: 6px;
+  color: gray;
+  margin: 2px;
+  font-weight: 650;
+  background: #f9f9f9;
+}
+
+QTabBar::tab:selected {
+  color: black;
+  border-bottom: 3px solid #167dff;
+}
+
+QTabBar::tab:hover {
+  color: black;
+}
+
+QScrollArea {
+  padding: 0px;
+  border: none;
+}
+
+QScrollBar::handle:horizontal,
+QScrollBar::handle:vertical {
+  background: #ededed; /* Windows 11 scrollbar handle color */
+  border-radius: 5px;
+}
+
+QScrollBar:horizontal {
+  background: #f9f9f9;
+  border: none;
+  height: 5px;
+  margin: 0px;
+}
+
+QScrollBar:vertical {
+  background: #f9f9f9;
+  border: none;
+  width: 5px;
+  margin: 0px;
+}
+
+QScrollBar::up-arrow:horizontal,
+QScrollBar::down-arrow:horizontal,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal,
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal,
+QScrollBar::up-arrow:vertical,
+QScrollBar::down-arrow:vertical,
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical,
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+  background: none;
+  height: 0px;
+  width: 0px;
+}
+
+QMenu {
+  background-color: #f9f9f9;;
+  border: none;
+  border-radius: 5px;
+  padding: 6px;
+  margin: 2px;
+  border-radius: 10px;
+}
+
+QMenu::item {
+  background-color: #f9f9f9;;
+  color: #000000;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 20px 2px 20px;
+  font-size: 11px;
+}
+
+QMenu::item:selected {
+  background-color: #167dff;
+  color: #f9f9f9;
+}
+
+QMenu::item:disabled {
+  color: gray;
+}
+
+QLineEdit {
+  background-color: #f9f9f9;;
+  color: #000000;
+  border: 1px solid gray;
+  border-radius: 5px;
+  margin: 2px;
+  padding: 6px;
+}
+
+/***************** Object Names *****************/
+
+QFrame#Clipbird {
+  border: 1px solid rgba(0, 0, 0, 0.110);
+  border-radius: 10px;
+}
+
+#Status {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+#Device > * {
+  font-weight: 550;
+}
+
+#ClipTile {
+  background: #ededed;
+  color: white;
+  border-radius: 10px;
+  max-width: 300;
+  min-width: 300;
+}
+
+#ClipTile > QPushButton {
+  background: none;
+}
+
+#ClipTile > QLabel {
+  background: #ededed;
+  max-height: 80px;
+  min-height: 80px;
+}

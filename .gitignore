@@ -1,0 +1,10 @@
+# CMake Build Files
+# -----------------
+CMakeFiles
+build
+dist
+
+# visual studio
+#-----------------
+.vs
+out
