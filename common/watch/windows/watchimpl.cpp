@@ -63,7 +63,7 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
 
   // Identify the directory watch instance
   Directory* directory = nullptr;
-  
+
   for (auto& d : watcher->directories) {
     if (&d.overlapped == overlapped) {
       directory = &d;
@@ -91,7 +91,7 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
     if (fileInfo->NextEntryOffset == 0) {
       break;
     }
-    
+
     // Move to the next entry
     base += fileInfo->NextEntryOffset;
   }
@@ -153,8 +153,8 @@ QStringList WatchImpl::paths() const {
  */
 bool WatchImpl::addPath(const QString &path, bool recursive) {
   WatchImpl::Directory directory;
-  
-  directory.handle = CreateFile(
+
+  directory.handle = CreateFileW(
     path.toStdWString().c_str(),
     FILE_LIST_DIRECTORY,
     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -174,7 +174,6 @@ bool WatchImpl::addPath(const QString &path, bool recursive) {
   directory.baseDir = path;
   directory.watcher = this;
   directory.recursive = recursive;
-  directories.push_back(directory);
 
   if (!ReadDirectoryChangesW(
     directory.handle,
@@ -190,6 +189,8 @@ bool WatchImpl::addPath(const QString &path, bool recursive) {
     &WatchImpl::DirectoryChangesCallback)) {
     return false;
   }
+
+  directories.push_back(directory);
 
   return true;
 }
