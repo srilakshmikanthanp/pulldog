@@ -13,52 +13,39 @@ namespace srilakshmikanthanp::pulldog::common {
  * @param dest
  * @param parent
  */
-Copier::Copier(QString src, QString dest, QObject *parent)
-    : QObject(parent), source(src), destination(dest) {}
-
-/**
- * @brief get the progress
- */
-double Copier::getProgress() const {
-  return progress;
-}
-
-/**
- * @brief get the source
- */
-QString Copier::getSource() const {
-  return source;
-}
-
-/**
- * @brief get the destination
- */
-QString Copier::getDestination() const {
-  return destination;
-}
+Copier::Copier(QObject *parent): QObject(parent) {}
 
 /**
  * @brief start copying
  */
-void Copier::start() {
+void Copier::copy(QString source, QString destination) {
   // open the destination file
   QFile dest(destination);
   if (!dest.open(QIODevice::WriteOnly)) {
+    emit onError("Failed to open destination file " + destination);
     return;
   }
 
   // open the source file
   QFile src(source);
   if (!src.open(QIODevice::ReadOnly)) {
+    emit onError("Failed to open source file " + source);
     return;
   }
+
+  // buffer size
+  const int bufferSize = 1024 * 1024;
 
   // get the size of the file
   qint64 size = src.size();
   qint64 read = 0;
+  double progress = 0;
+
+  // Transfer Object
+  models::Transfer transfer(source, destination);
 
   // emit the started signal
-  emit started(progress);
+  emit onCopyStart(transfer);
 
   // read and write
   while (read < size) {
@@ -66,10 +53,10 @@ void Copier::start() {
     read      += data.size();
     progress  = (read * 100) / size;
     dest.write(data);
-    emit onChange(progress);
+    emit onCopy(transfer, progress);
   }
 
   // emit the finished signal
-  emit finished(progress);
+  emit onCopyEnd(transfer);
 }
 }  // namespace srilakshmikanthanp::pulldog::common

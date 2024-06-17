@@ -8,17 +8,14 @@
 #include <QObject>
 #include <QFile>
 
+#include "models/transfer/transfer.hpp"
+
 namespace srilakshmikanthanp::pulldog::common {
 /**
  * @brief A Class that copies a file from one location to another
  * with a progress signal
  */
 class Copier : public QObject {
- private:
-  QString source, destination;
-  std::atomic<double> progress = 0;
-  int bufferSize = 1024;
-
  private:
 
   Q_DISABLE_COPY(Copier)
@@ -28,20 +25,23 @@ class Copier : public QObject {
   Q_OBJECT
 
  signals:
-  void onChange(double progress);
+  void onCopyStart(const models::Transfer&);
 
  signals:
-  void started(double progress);
+  void onCopy(const models::Transfer&, double progress);
 
  signals:
-  void finished(double progress);
+  void onCopyEnd(const models::Transfer&);
+
+ signals:
+  void onError(const QString&);
 
  public:
 
   /**
    * @brief Construct a new Copier object
    */
-  Copier(QString src, QString dest, QObject *parent = nullptr);
+  Copier(QObject *parent = nullptr);
 
   /**
    * @brief Destroy the Copier object
@@ -51,21 +51,6 @@ class Copier : public QObject {
   /**
    * @brief Copy the file
    */
-  void start();
-
-  /**
-   * @brief get the progress
-   */
-  double getProgress() const;
-
-  /**
-   * @brief get the source
-   */
-  QString getSource() const;
-
-  /**
-   * @brief get the destination
-   */
-  QString getDestination() const;
+  void copy(QString src, QString dest);
 };
 }  // namespace srilakshmikanthanp::pulldog::common::copier

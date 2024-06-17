@@ -57,7 +57,7 @@ cmake_policy(SET CMP0071 NEW)
 
 # --------------------------------- Main Project ---------------------------------#
 # Set the QApplication class
-set(QPULLDOG_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
+set(QAPPLICATION_CLASS QApplication CACHE STRING "Inheritance class for SingleApplication")
 
 # set QT_DEFAULT_MAJOR_VERSION to QT_MAJOR_VERSION
 set(QT_DEFAULT_MAJOR_VERSION ${QT_MAJOR_VERSION})
@@ -70,15 +70,6 @@ FetchContent_Declare(SingleApplication
 
 # Make Available SingleApplication
 FetchContent_MakeAvailable(SingleApplication)
-
-# Fetch https://github.com/SpartanJ/efsw.git
-FetchContent_Declare(efsw
-  GIT_REPOSITORY https://github.com/SpartanJ/efsw.git
-  GIT_TAG        1.4.0
-)
-
-# Make Available efsw
-FetchContent_MakeAvailable(efsw)
 
 # glob pattern for main cpp files exclude
 file(GLOB_RECURSE main_cpp *.cpp)
@@ -125,13 +116,14 @@ endif()
 qt_add_executable(pulldog
   ${main_cpp} ${RESOURCES})
 
-# Include Directories for Protobuf
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+# Include Directories for Root of project
+target_include_directories(pulldog
+  PRIVATE ${PROJECT_SOURCE_DIR}
+  PRIVATE ${PROJECT_BINARY_DIR})
 
 # Link libraries
 target_link_libraries(pulldog
   PRIVATE SingleApplication::SingleApplication
-  PRIVATE efsw
   PRIVATE Qt6::Widgets
   PRIVATE Qt6::Network
   PRIVATE Qt6::Concurrent)
@@ -150,4 +142,8 @@ endif()
 # add target compiler options MSVC /std:c++17
 if(MSVC)
   target_compile_options(pulldog PRIVATE /std:c++17)
+endif()
+
+if(WIN32)
+  add_definitions(-D_WIN32)
 endif()

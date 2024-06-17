@@ -9,56 +9,62 @@ namespace srilakshmikanthanp::pulldog {
 void Controller::handleFileUpdate(const QString dir, const QString path) {
   // get the destination file path from the destination root
   auto destFile = destinationRoot.filePath(path);
+  auto srcFile = QDir(dir).filePath(path);
 
   // create all parent directories
   if(!QDir().mkpath(QFileInfo(destFile).dir().path())) {
-    qWarning() << "Failed to create parent directories for " << destFile;
+    emit onError("Failed to create parent directories for " + destFile);
     return;
   }
 
-  // create a file object
-  auto file = QFile(destFile);
-
-  // delete the file if it exists
-  if(file.exists() && !file.remove()) {
-    qWarning() << "Failed to remove " << destFile;
-    return;
-  }
-
-  // create a Thread and copier object
-  auto copier = new common::Copier(path, destFile);
-  auto thread = new QThread();
-
-  // move the copier object to the thread
-  copier->moveToThread(thread);
-
-  // connect the signals
-  connect(
-    thread, &QThread::started,
-    copier, &common::Copier::start
-  );
-
-  connect(
-    thread, &QThread::finished,
-    thread, &QThread::deleteLater
-  );
-
-  // create a copier object and emit the signal
-  emit onFileCopy(copier);
+  // copy the file
+  emit copy(srcFile, destFile);
 }
 
 /**
  * @brief Construct a new Controller object
  */
-Controller::Controller(QString destRoot, QObject *parent) : QObject(parent) {
+Controller::Controller(const QString &destRoot, QObject *parent) : QObject(parent) {
   // set the destination root directory
   this->destinationRoot = QDir(destRoot);
 
+  // move the copier object to the thread
+  copier.moveToThread(&thread);
+
   // connect the signals
   connect(
-    &watcher, &common::Watcher::fileCreated,
-    this, &handleFileCreatedOrUpdated
+    &watcher, &common::Watch::fileCreated,
+    this, &Controller::handleFileUpdate
   );
+
+  connect(
+    &watcher, &common::Watch::fileUpdated,
+    this, &Controller::handleFileUpdate
+  );
+
+  // connect the signals
+  connect(&copier, &common::Copier::onCopyStart, this, &Controller::onCopyStart);
+  connect(&copier, &common::Copier::onCopy, this, &Controller::onCopy);
+  connect(&copier, &common::Copier::onCopyEnd, this, &Controller::onCopyEnd);
+  connect(&copier, &common::Copier::onError, this, &Controller::onError);
+
+  // copy signal to copier
+  connect(this, &Controller::copy, &copier, &common::Copier::copy);
+
+  // start the thread
+  thread.start();
+}
+
+Controller::~Controller() {
+  thread.quit();
+  thread.wait();
+}
+
+/**
+ * @brief get the destination root
+ */
+QString Controller::getDestinationRoot() const {
+  return destinationRoot.path();
 }
 
 /**
@@ -66,7 +72,7 @@ Controller::Controller(QString destRoot, QObject *parent) : QObject(parent) {
  *
  * @param path
  */
-bool Controller::addPath(const QString &path, bool recursive = true) {
+bool Controller::addPath(const QString &path, bool recursive) {
   return watcher.addPath(path, recursive);
 }
 
@@ -82,5 +88,13 @@ QStringList Controller::paths() const {
  */
 void Controller::removePath(const QString &path) {
   watcher.removePath(path);
+}
+
+/**
+ * @brief Instance of the controller
+ */
+Controller& Controller::instance(const QString &destRoot, QObject *parent) {
+  static Controller controller(destRoot, parent);
+  return controller;
 }
 }  // namespace srilakshmikanthanp::pulldog

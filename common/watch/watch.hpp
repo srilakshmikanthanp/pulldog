@@ -5,27 +5,31 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#include <efsw/FileWatcher.cpp>
 #include <QObject>
+#include <QDir>
+
+#ifdef _WIN32
+#include "windows/watchimpl.hpp"
+#endif
 
 namespace srilakshmikanthanp::pulldog::common {
 /**
  * @brief Currently a wrapper around QFileSystemWatcher
  */
-class Watcher : public QObject, private efsw::FileWatchListener {
+class Watch : public QObject {
  private:
-  efsw::FileWatcher *watcher = new efsw::FileWatcher();
+  WatchImpl watcher;
 
  private:
-  Q_DISABLE_COPY(Watcher)
+  Q_DISABLE_COPY(Watch)
 
  private: // Just for qt
   Q_OBJECT
 
  signals:
-  void fileCreated(const QString dir, const QString file);
-  void fileRemoved(const QString dir, const QString file);
-  void fileChanged(const QString dir, const QString file);
+  void fileCreated(const QString &dir, const QString &file);
+  void fileRemoved(const QString &dir, const QString &file);
+  void fileUpdated(const QString &dir, const QString &file);
 
  signals:
   void fileMoved(
@@ -34,16 +38,26 @@ class Watcher : public QObject, private efsw::FileWatchListener {
     const QString newFile
   );
 
+ signals:
+  void onError(const QString &error);
+
  public:
   /**
-   * @brief Construct a new Watcher object
+   * @brief Construct a new Watch object
    */
-  Watcher(QObject *parent = nullptr);
+  Watch(QObject *parent = nullptr);
 
   /**
-   * @brief Destroy the Watcher object
+   * @brief Destroy the Watch object
    */
-  ~Watcher();
+  ~Watch() = default;
+
+  /**
+   * @brief Remove a path from watch
+   *
+   * @param path
+   */
+  void removePath(const QString &path);
 
   /**
    * @brief paths
@@ -56,21 +70,5 @@ class Watcher : public QObject, private efsw::FileWatchListener {
    * @param path
    */
   bool addPath(const QString &path, bool recursive = true);
-
-  /**
-   * @brief Remove a path from watch
-   *
-   * @param path
-   */
-  void removePath(const QString &path);
-
- private:
-  void handleFileAction(
-    efsw::WatchID watchId,
-    const std::string& dir,
-    const std::string& filename,
-    efsw::Action action,
-    std::string oldFilename
-  ) override;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::watcher

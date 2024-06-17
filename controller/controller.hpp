@@ -6,16 +6,26 @@
 // https://opensource.org/licenses/MIT
 
 #include <QObject>
+#include <QDir>
+#include <QMutex>
+#include <QMap>
+#include <QThread>
+#include <QFileInfo>
+#include <QFile>
+#include <QList>
 #include <QSharedPointer>
 
 #include "common/copier/copier.hpp"
-#include "common/watcher/watcher.hpp"
+#include "common/watch/watch.hpp"
+#include "models/transfer/transfer.hpp"
 
 namespace srilakshmikanthanp::pulldog {
 class Controller : public QObject {
  private: // Private members
-  common::Watcher watcher;
+  common::Copier copier;
   QDir destinationRoot;
+  QThread thread;
+  common::Watch watcher;
 
  private:  // Just for qt
   Q_OBJECT
@@ -24,18 +34,36 @@ class Controller : public QObject {
   void handleFileUpdate(const QString dir, const QString path);
 
  signals:
-  void onFileCopy(QSharedPointer<common::Copier> copier);
+  void onCopyStart(const models::Transfer &transfer);
 
- public:  // Public members
+ signals:
+  void onCopy(const models::Transfer &transfer, double progress);
+
+ signals:
+  void onCopyEnd(const models::Transfer &transfer);
+
+ signals:
+  void onError(const QString &error);
+
+ private:
+  Q_SIGNAL void copy(const QString &src, const QString &dest);
+
+ private:  // Private members
   /**
    * @brief Construct a new Controller object
    */
-  Controller(QString destRoot, QObject *parent = nullptr);
+  Controller(const QString &destRoot, QObject *parent = nullptr);
 
+ public:  // Public members
   /**
    * @brief Destroy the Controller object
    */
-  ~Controller() = default;
+  ~Controller();
+
+  /**
+   * @brief get the destination root
+   */
+  QString getDestinationRoot() const;
 
   /**
    * @brief Get the Paths object
@@ -51,5 +79,10 @@ class Controller : public QObject {
    * @brief Add a path to watch
    */
   bool addPath(const QString &path, bool recursive = true);
+
+  /**
+   * @brief Instance of the controller
+   */
+  static Controller& instance(const QString &destRoot, QObject *parent = nullptr);
 };
 }  // namespace srilakshmikanthanp::pulldog

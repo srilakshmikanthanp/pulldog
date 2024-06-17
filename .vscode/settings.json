@@ -160,6 +160,7 @@
         "stdfloat": "cpp",
         "knotification": "cpp",
         "qfile": "cpp",
-        "qsharedpointer": "cpp"
+        "qsharedpointer": "cpp",
+        "qlocalsocket": "cpp"
     }
 }
