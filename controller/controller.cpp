@@ -42,14 +42,37 @@ Controller::Controller(const QString &destRoot, QObject *parent) : QObject(paren
     this, &Controller::handleFileUpdate
   );
 
-  // connect the signals
-  connect(&copier, &common::Copier::onCopyStart, this, &Controller::onCopyStart);
-  connect(&copier, &common::Copier::onCopy, this, &Controller::onCopy);
-  connect(&copier, &common::Copier::onCopyEnd, this, &Controller::onCopyEnd);
-  connect(&copier, &common::Copier::onError, this, &Controller::onError);
+  connect(
+    &watcher, &common::Watch::pathsChanged,
+    this, &Controller::pathsChanged
+  );
 
   // copy signal to copier
-  connect(this, &Controller::copy, &copier, &common::Copier::copy);
+  connect(
+    this, &Controller::copy,
+    &copier, &common::Copier::copy
+  );
+
+  // connect the signals
+  connect(
+    &copier, &common::Copier::onCopyStart,
+    this, &Controller::onCopyStart
+  );
+
+  connect(
+    &copier, &common::Copier::onCopy,
+    this, &Controller::onCopy
+  );
+
+  connect(
+    &copier, &common::Copier::onCopyEnd,
+    this, &Controller::onCopyEnd
+  );
+
+  connect(
+    &copier, &common::Copier::onError,
+    this, &Controller::onError
+  );
 
   // start the thread
   thread.start();
@@ -72,7 +95,7 @@ QString Controller::getDestinationRoot() const {
  *
  * @param path
  */
-bool Controller::addPath(const QString &path, bool recursive) {
+void Controller::addPath(const QString &path, bool recursive) {
   return watcher.addPath(path, recursive);
 }
 

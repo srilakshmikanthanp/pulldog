@@ -7,7 +7,10 @@
 // https://opensource.org/licenses/MIT
 
 #include <QObject>
+#include <QThread>
 #include <QDir>
+#include <QMutex>
+#include <QMutexLocker>
 
 #include <windows.h>
 
@@ -37,6 +40,9 @@ class WatchImpl : public QObject {
     const QString oldFile,
     const QString newFile
   );
+
+ signals:
+  void pathsChanged(const QString &path, bool isAdded);
 
  signals:
   void onError(const QString &error);
@@ -69,22 +75,23 @@ class WatchImpl : public QObject {
    *
    * @param path
    */
-  bool addPath(const QString &path, bool recursive = true);
+  void addPath(const QString &path, bool recursive = true);
 
  private:
   // structure to hold the directory Info
-  struct Directory {
+  struct DirWatch {
     OVERLAPPED overlapped;
     QString baseDir;
     HANDLE handle;
+    QString oldFileName;
     bool recursive;
-    char buffer[64];
+    alignas(4) uint8_t buffer[1024];
     WatchImpl* watcher;
   };
 
  private:
   // process the file info from ReadDirectoryChangesW
-  void processFileInfo(Directory dir, const FILE_NOTIFY_INFORMATION *fileInfo);
+  void processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo);
 
   // get the file name from the handle
   QString getFileNameFromHandle(HANDLE handle) const;
@@ -99,7 +106,7 @@ class WatchImpl : public QObject {
 
  private:
   // list of handles watched by ReadDirectoryChangesW
-  QList<Directory> directories;
+  QList<DirWatch*> directories;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::watcher
 #endif  // _WIN32

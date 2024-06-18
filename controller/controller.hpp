@@ -43,6 +43,9 @@ class Controller : public QObject {
   void onCopyEnd(const models::Transfer &transfer);
 
  signals:
+  void pathsChanged(const QString &path, bool isAdded);
+
+ signals:
   void onError(const QString &error);
 
  private:
@@ -78,7 +81,7 @@ class Controller : public QObject {
   /**
    * @brief Add a path to watch
    */
-  bool addPath(const QString &path, bool recursive = true);
+  void addPath(const QString &path, bool recursive = true);
 
   /**
    * @brief Instance of the controller

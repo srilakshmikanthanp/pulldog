@@ -46,6 +46,13 @@ Watch::Watch(QObject *parent) : QObject(parent) {
     this,
     &Watch::onError
   );
+
+  connect(
+    &this->watcher,
+    &WatchImpl::pathsChanged,
+    this,
+    &Watch::pathsChanged
+  );
 }
 
 /**
@@ -62,7 +69,7 @@ QStringList Watch::paths() const {
  *
  * @param path
  */
-bool Watch::addPath(const QString &path, bool recursive) {
+void Watch::addPath(const QString &path, bool recursive) {
   return this->watcher.addPath(path, recursive);
 }
 

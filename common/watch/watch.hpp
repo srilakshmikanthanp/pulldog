@@ -39,6 +39,9 @@ class Watch : public QObject {
   );
 
  signals:
+  void pathsChanged(const QString &path, bool isAdded);
+
+ signals:
   void onError(const QString &error);
 
  public:
@@ -69,6 +72,6 @@ class Watch : public QObject {
    *
    * @param path
    */
-  bool addPath(const QString &path, bool recursive = true);
+  void addPath(const QString &path, bool recursive = true);
 };
 }  // namespace srilakshmikanthanp::pulldog::common::watcher

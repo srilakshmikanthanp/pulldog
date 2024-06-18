@@ -161,6 +161,7 @@
         "knotification": "cpp",
         "qfile": "cpp",
         "qsharedpointer": "cpp",
-        "qlocalsocket": "cpp"
+        "qlocalsocket": "cpp",
+        "qthread": "cpp"
     }
 }

@@ -6,6 +6,32 @@
 #include "watchimpl.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
+void WatchImpl::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
+  auto fileName = QString::fromWCharArray(
+    fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR)
+  );
+
+  switch (fileInfo->Action) {
+    case FILE_ACTION_MODIFIED:
+      emit fileUpdated(dir->baseDir, fileName);
+      break;
+    case FILE_ACTION_ADDED:
+      emit fileCreated(dir->baseDir, fileName);
+      break;
+    case FILE_ACTION_RENAMED_OLD_NAME:
+      dir->oldFileName = fileName;
+      break;
+    case FILE_ACTION_RENAMED_NEW_NAME:
+      emit fileMoved(dir->baseDir, dir->oldFileName, fileName);
+      break;
+    case FILE_ACTION_REMOVED:
+      emit fileRemoved(dir->baseDir, fileName);
+      break;
+    default:
+      break;
+  }
+}
+
 QString WatchImpl::getFileNameFromHandle(HANDLE handle) const {
   auto buffer = std::make_unique<WCHAR[]>(MAX_PATH);
   auto fileName = QString();
@@ -26,24 +52,6 @@ QString WatchImpl::getFileNameFromHandle(HANDLE handle) const {
   return fileName;
 }
 
-void WatchImpl::processFileInfo(Directory dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
-  auto fileName = QString::fromWCharArray(fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR));
-
-  switch (fileInfo->Action) {
-    case FILE_ACTION_ADDED:
-      emit fileCreated(dir.baseDir, fileName);
-      break;
-    case FILE_ACTION_REMOVED:
-      emit fileRemoved(dir.baseDir, fileName);
-      break;
-    case FILE_ACTION_MODIFIED:
-      emit fileUpdated(dir.baseDir, fileName);
-      break;
-    default:
-      break;
-  }
-}
-
 void CALLBACK WatchImpl::DirectoryChangesCallback(
   DWORD errorCode,
   DWORD numberOfBytesTransferred,
@@ -62,11 +70,11 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
   }
 
   // Identify the directory watch instance
-  Directory* directory = nullptr;
+  DirWatch *directory = nullptr;
 
-  for (auto& d : watcher->directories) {
-    if (&d.overlapped == overlapped) {
-      directory = &d;
+  for (auto dir: watcher->directories) {
+    if (&dir->overlapped == overlapped) {
+      directory = dir;
       break;
     }
   }
@@ -78,14 +86,14 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
 
   // Process the buffer
   FILE_NOTIFY_INFORMATION* fileInfo = nullptr;
-  char* base = directory->buffer;
+  uint8_t* base = directory->buffer;
 
   while (true) {
     // Get the file info structure from the buffer
     fileInfo = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(base);
 
     // Process the file info structure
-    watcher->processFileInfo(*directory, fileInfo);
+    watcher->processFileInfo(directory, fileInfo);
 
     // Check if this is the last entry
     if (fileInfo->NextEntryOffset == 0) {
@@ -108,8 +116,11 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
     FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
     NULL,
     &directory->overlapped,
-    &DirectoryChangesCallback)) {
+    WatchImpl::DirectoryChangesCallback)) {
     watcher->onError(QString("Error in re-issuing ReadDirectoryChangesW: %1").arg(GetLastError()));
+    CloseHandle(directory->handle);
+    watcher->directories.removeOne(directory);
+    emit watcher->pathsChanged(directory->baseDir, false);
   }
 }
 
@@ -119,7 +130,7 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
  * @param parent
  */
 WatchImpl::WatchImpl(QObject *parent) : QObject(parent) {
-  // Do nothing
+  // do nothing
 }
 
 /**
@@ -127,7 +138,7 @@ WatchImpl::WatchImpl(QObject *parent) : QObject(parent) {
  */
 WatchImpl::~WatchImpl() {
   for (auto& directory : this->directories) {
-    CloseHandle(directory.handle);
+    CloseHandle(directory->handle);
   }
 }
 
@@ -140,7 +151,7 @@ QStringList WatchImpl::paths() const {
   auto paths = QStringList();
 
   for(auto handle: this->directories) {
-    paths.push_back(this->getFileNameFromHandle(handle.handle));
+    paths.push_back(this->getFileNameFromHandle(handle->handle));
   }
 
   return paths;
@@ -151,10 +162,10 @@ QStringList WatchImpl::paths() const {
  *
  * @param path
  */
-bool WatchImpl::addPath(const QString &path, bool recursive) {
-  WatchImpl::Directory directory;
+void WatchImpl::addPath(const QString &path, bool recursive) {
+  WatchImpl::DirWatch *directory = new WatchImpl::DirWatch();
 
-  directory.handle = CreateFileW(
+  directory->handle = CreateFileW(
     path.toStdWString().c_str(),
     FILE_LIST_DIRECTORY,
     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -164,35 +175,37 @@ bool WatchImpl::addPath(const QString &path, bool recursive) {
     NULL
   );
 
-  if (directory.handle == INVALID_HANDLE_VALUE) {
+  if (directory->handle == INVALID_HANDLE_VALUE) {
     onError(QString("Failed to open directory: %1").arg(path));
-    return false;
+    return;
   }
 
-  ZeroMemory(&directory.overlapped, sizeof(OVERLAPPED));
-  directory.overlapped.hEvent = reinterpret_cast<HANDLE>(this);
-  directory.baseDir = path;
-  directory.watcher = this;
-  directory.recursive = recursive;
+  ZeroMemory(&directory->overlapped, sizeof(OVERLAPPED));
+  directory->overlapped.hEvent = reinterpret_cast<HANDLE>(this);
+  directory->baseDir = path;
+  directory->watcher = this;
+  directory->recursive = recursive;
 
   if (!ReadDirectoryChangesW(
-    directory.handle,
-    directory.buffer,
-    sizeof(directory.buffer),
-    directory.recursive,  // Monitor the directory tree
+    directory->handle,
+    directory->buffer,
+    sizeof(directory->buffer),
+    directory->recursive,  // Monitor the directory tree
     FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
     FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
     FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_LAST_ACCESS |
     FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
     NULL,
-    &directory.overlapped,
-    &WatchImpl::DirectoryChangesCallback)) {
-    return false;
+    &directory->overlapped,
+    WatchImpl::DirectoryChangesCallback)) {
+    onError(QString("Error in ReadDirectoryChangesW: %1").arg(GetLastError()));
+    CloseHandle(directory->handle);
+    return;
   }
 
   directories.push_back(directory);
 
-  return true;
+  emit pathsChanged(path, true);
 }
 
 /**
@@ -201,10 +214,10 @@ bool WatchImpl::addPath(const QString &path, bool recursive) {
  * @param path
  */
 void WatchImpl::removePath(const QString &path) {
-  for (auto it = this->directories.begin(); it != this->directories.end(); ++it) {
-    if (this->getFileNameFromHandle(it->handle) == path) {
-      CloseHandle(it->handle);
-      directories.erase(it);
+  for (auto dir: directories) {
+    if (this->getFileNameFromHandle(dir->handle) == path) {
+      CloseHandle(dir->handle);
+      directories.removeOne(dir);
       break;
     }
   }
