@@ -12,7 +12,7 @@ namespace srilakshmikanthanp::pulldog::common {
  * @param file
  * @param parent
  */
-Locker::Locker(const QString file, LockMode mode, QObject *parent) : QObject(parent), locker(file, mode) {
+Locker::Locker(const QString file, types::LockMode mode, QObject *parent) : QObject(parent), locker(file, mode) {
   // Do nothing
 }
 
@@ -28,6 +28,13 @@ Locker::~Locker() {
  */
 bool Locker::isLocked() const {
   return locker.isLocked();
+}
+
+/**
+ * @brief Try to lock a file
+ */
+int Locker::tryLock() {
+  return locker.tryLock();
 }
 
 /**

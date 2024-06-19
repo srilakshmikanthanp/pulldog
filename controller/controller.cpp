@@ -17,8 +17,54 @@ void Controller::handleFileUpdate(const QString dir, const QString path) {
     return;
   }
 
-  // copy the file
-  emit copy(srcFile, destFile);
+  // Create a key for the pending file update
+  auto key = QPair<QString, QString>(srcFile, destFile);
+
+  // Add or update the pending file update
+  pendingFileUpdate[key] = QDateTime::currentMSecsSinceEpoch();
+}
+
+/**
+ * @brief Process the pending file update
+ */
+void Controller::processPendingFileUpdate() {
+  // get the current time
+  auto currentTime = QDateTime::currentMSecsSinceEpoch();
+
+  // iterate the pending file update
+  for(auto pending: pendingFileUpdate.keys()) {
+    // get the last update time
+    auto lastUpdateTime = pendingFileUpdate[pending];
+
+    // check the threshold
+    if(currentTime - lastUpdateTime < THRESHOLD) {
+      continue;
+    }
+
+    // update the last update time
+    pendingFileUpdate[pending] = currentTime;
+
+    // extract the source and destination file
+    auto destFile = pending.second;
+    auto srcFile = pending.first;
+
+    // create an locker object
+    common::Locker locker(srcFile, types::LockMode::READ);
+
+    // try to lock the file
+    if(locker.tryLock() < 0) {
+      continue;
+    }
+
+    // unlock the file
+    locker.unlock();
+
+    // emit the copy signal
+    emit copy(srcFile, destFile);
+
+    // remove the pending file update
+    pendingFileUpdate.remove(pending);
+  }
 }
 
 /**
@@ -74,8 +120,17 @@ Controller::Controller(const QString &destRoot, QObject *parent) : QObject(paren
     this, &Controller::onError
   );
 
+  // connect the timer
+  connect(
+    &timer, &QTimer::timeout,
+    this, &Controller::processPendingFileUpdate
+  );
+
   // start the thread
   thread.start();
+
+  // start the timer
+  timer.start(THRESHOLD / 2);
 }
 
 Controller::~Controller() {

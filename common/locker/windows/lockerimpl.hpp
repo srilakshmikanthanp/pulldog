@@ -29,11 +29,8 @@ class LockerImpl : public QObject {
 
  private:
   HANDLE hFile = INVALID_HANDLE_VALUE;
-  LockMode mode;
+  types::LockMode mode;
   QString file;
-
- private:
-  int tryLock();
 
  private: // Just for qt
   Q_OBJECT
@@ -42,7 +39,7 @@ class LockerImpl : public QObject {
   /**
    * @brief Construct a new Locker object
    */
-  LockerImpl(const QString, LockMode mode, QObject *parent = nullptr);
+  LockerImpl(const QString, types::LockMode mode, QObject *parent = nullptr);
 
   /**
    * @brief Destroy the Locker object
@@ -53,6 +50,11 @@ class LockerImpl : public QObject {
    * @brief is locked
    */
   bool isLocked() const;
+
+  /**
+   * @brief Try to lock a file
+   */
+  int tryLock();
 
   /**
    * @brief Lock a file

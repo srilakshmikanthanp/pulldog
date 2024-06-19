@@ -14,8 +14,10 @@
 #include <QFile>
 #include <QList>
 #include <QSharedPointer>
+#include <QTimer>
 
 #include "common/copier/copier.hpp"
+#include "common/locker/locker.hpp"
 #include "common/watch/watch.hpp"
 #include "models/transfer/transfer.hpp"
 
@@ -26,6 +28,17 @@ class Controller : public QObject {
   QDir destinationRoot;
   QThread thread;
   common::Watch watcher;
+
+ private:
+  // Pending file update with last update time
+  QMap<QPair<QString, QString>, long long> pendingFileUpdate;
+
+ private:
+  // timer for checking pending file update
+  QTimer timer;
+
+ private:
+  long long THRESHOLD = 10000;
 
  private:  // Just for qt
   Q_OBJECT
@@ -50,6 +63,9 @@ class Controller : public QObject {
 
  private:
   Q_SIGNAL void copy(const QString &src, const QString &dest);
+
+ private:
+  void processPendingFileUpdate();
 
  private:  // Private members
   /**

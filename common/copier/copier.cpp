@@ -20,7 +20,7 @@ Copier::Copier(QObject *parent): QObject(parent) {}
  */
 void Copier::copy(QString source, QString destination) {
   // try to lock the destination file
-  Locker destLock(destination, LockMode::WRITE);
+  Locker destLock(destination, types::LockMode::WRITE);
 
   // if failed to lock
   int fd = destLock.lock();
@@ -38,7 +38,7 @@ void Copier::copy(QString source, QString destination) {
   }
 
   // try to lock the source file
-  Locker srcLock(source, LockMode::READ);
+  Locker srcLock(source, types::LockMode::READ);
 
   // if failed to lock
   fd = srcLock.lock();

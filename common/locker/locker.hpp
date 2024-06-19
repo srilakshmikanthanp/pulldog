@@ -33,7 +33,7 @@ class Locker : public QObject {
   /**
    * @brief Construct a new Locker object
    */
-  Locker(const QString, LockMode mode = LockMode::READ, QObject *parent = nullptr);
+  Locker(const QString, types::LockMode mode = types::LockMode::READ, QObject *parent = nullptr);
 
   /**
    * @brief Destroy the Locker object
@@ -44,6 +44,11 @@ class Locker : public QObject {
    * @brief is locked
    */
   bool isLocked() const;
+
+  /**
+   * @brief Try to lock a file
+   */
+  int tryLock();
 
   /**
    * @brief Lock a file
