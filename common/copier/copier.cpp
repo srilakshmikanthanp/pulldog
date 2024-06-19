@@ -19,16 +19,38 @@ Copier::Copier(QObject *parent): QObject(parent) {}
  * @brief start copying
  */
 void Copier::copy(QString source, QString destination) {
+  // try to lock the destination file
+  Locker destLock(destination, LockMode::WRITE);
+
+  // if failed to lock
+  int fd = destLock.lock();
+
+  if (fd < 0) {
+    emit onError("Failed to lock destination file " + destination);
+    return;
+  }
+
   // open the destination file
-  QFile dest(destination);
-  if (!dest.open(QIODevice::WriteOnly)) {
+  QFile dest;
+  if (!dest.open(fd, QIODevice::WriteOnly)) {
     emit onError("Failed to open destination file " + destination);
     return;
   }
 
+  // try to lock the source file
+  Locker srcLock(source, LockMode::READ);
+
+  // if failed to lock
+  fd = srcLock.lock();
+
+  if (fd < 0) {
+    emit onError("Failed to lock source file " + source);
+    return;
+  }
+
   // open the source file
-  QFile src(source);
-  if (!src.open(QIODevice::ReadOnly)) {
+  QFile src;
+  if (!src.open(fd, QIODevice::ReadOnly)) {
     emit onError("Failed to open source file " + source);
     return;
   }

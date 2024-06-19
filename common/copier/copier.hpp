@@ -7,7 +7,9 @@
 
 #include <QObject>
 #include <QFile>
+#include <QLockFile>
 
+#include "common/locker/locker.hpp"
 #include "models/transfer/transfer.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
