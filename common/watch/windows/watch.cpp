@@ -3,10 +3,10 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#include "watchimpl.hpp"
+#include "watch.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
-void WatchImpl::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
+void Watch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
   auto fileName = QString::fromWCharArray(
     fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR)
   );
@@ -32,33 +32,17 @@ void WatchImpl::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fi
   }
 }
 
-QString WatchImpl::getFileNameFromHandle(HANDLE handle) const {
-  auto buffer = std::make_unique<WCHAR[]>(MAX_PATH);
-  auto fileName = QString();
-
-  auto size = GetFinalPathNameByHandleW(
-    handle,
-    buffer.get(),
-    MAX_PATH,
-    VOLUME_NAME_DOS
-  );
-
-  if(size != 0) {
-    fileName = QString::fromWCharArray(buffer.get(), size);
-  } else {
-    throw std::runtime_error(QString("Error: %1").arg(GetLastError()).toStdString());
-  }
-
-  return fileName;
+QString Watch::getFileNameFromHandle(HANDLE handle) const {
+  return utility::getFileNameFromHandle(handle);
 }
 
-void CALLBACK WatchImpl::DirectoryChangesCallback(
+void CALLBACK Watch::DirectoryChangesCallback(
   DWORD errorCode,
   DWORD numberOfBytesTransferred,
   LPOVERLAPPED overlapped
 ) {
   // Get the instance of the class
-  auto watcher = reinterpret_cast<WatchImpl*>(overlapped->hEvent);
+  auto watcher = reinterpret_cast<Watch*>(overlapped->hEvent);
 
   if (errorCode != ERROR_SUCCESS) {
     watcher->onError(QString("Error in ReadDirectoryChangesW callback: %1").arg(errorCode));
@@ -116,7 +100,7 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
     FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
     NULL,
     &directory->overlapped,
-    WatchImpl::DirectoryChangesCallback)) {
+    Watch::DirectoryChangesCallback)) {
     watcher->onError(QString("Error in re-issuing ReadDirectoryChangesW: %1").arg(GetLastError()));
     CloseHandle(directory->handle);
     watcher->directories.removeOne(directory);
@@ -129,14 +113,14 @@ void CALLBACK WatchImpl::DirectoryChangesCallback(
  *
  * @param parent
  */
-WatchImpl::WatchImpl(QObject *parent) : QObject(parent) {
+Watch::Watch(QObject *parent) : IWatch(parent) {
   // do nothing
 }
 
 /**
  * @brief Destroy the Watcher:: Watcher object
  */
-WatchImpl::~WatchImpl() {
+Watch::~Watch() {
   for (auto& directory : this->directories) {
     CloseHandle(directory->handle);
   }
@@ -147,7 +131,7 @@ WatchImpl::~WatchImpl() {
  *
  * @return QStringList
  */
-QStringList WatchImpl::paths() const {
+QStringList Watch::paths() const {
   auto paths = QStringList();
 
   for(auto handle: this->directories) {
@@ -162,8 +146,8 @@ QStringList WatchImpl::paths() const {
  *
  * @param path
  */
-void WatchImpl::addPath(const QString &path, bool recursive) {
-  WatchImpl::DirWatch *directory = new WatchImpl::DirWatch();
+void Watch::addPath(const QString &path, bool recursive) {
+  Watch::DirWatch *directory = new Watch::DirWatch();
 
   directory->handle = CreateFileW(
     path.toStdWString().c_str(),
@@ -197,7 +181,7 @@ void WatchImpl::addPath(const QString &path, bool recursive) {
     FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
     NULL,
     &directory->overlapped,
-    WatchImpl::DirectoryChangesCallback)) {
+    Watch::DirectoryChangesCallback)) {
     onError(QString("Error in ReadDirectoryChangesW: %1").arg(GetLastError()));
     CloseHandle(directory->handle);
     return;
@@ -213,7 +197,7 @@ void WatchImpl::addPath(const QString &path, bool recursive) {
  *
  * @param path
  */
-void WatchImpl::removePath(const QString &path) {
+void Watch::removePath(const QString &path) {
   for (auto dir: directories) {
     if (this->getFileNameFromHandle(dir->handle) == path) {
       CloseHandle(dir->handle);

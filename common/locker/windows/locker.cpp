@@ -3,28 +3,28 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#include "lockerimpl.hpp"
+#include "locker.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
 /**
- * @brief Construct a new Locker object
+ * @brief Construct a new ILocker object
  *
  * @param file
  * @param parent
  */
-LockerImpl::LockerImpl(const QString file, types::LockMode mode, QObject *parent)
-  : QObject(parent), file(file), mode(mode) {
+Locker::Locker(const QString file, types::LockMode mode, QObject *parent)
+  : ILocker(parent), file(file), mode(mode) {
   // Do nothing
 }
 
 /**
- * @brief Destroy the Locker object
+ * @brief Destroy the ILocker object
  */
-LockerImpl::~LockerImpl() {
+Locker::~Locker() {
   this->unlock();
 }
 
-int LockerImpl::tryLock() {
+int Locker::tryLock() {
   auto shareMode = FILE_SHARE_READ;
   auto openMode = OPEN_EXISTING;
 
@@ -62,7 +62,7 @@ int LockerImpl::tryLock() {
 /**
  * @brief Lock a file
  */
-int LockerImpl::lock(MSec timeout) {
+int Locker::lock(MSec timeout) {
   // if file not exists, return error
   if (!QFile::exists(file) && mode == types::LockMode::READ) {
     return -1;
@@ -75,7 +75,7 @@ int LockerImpl::lock(MSec timeout) {
   while(!timer.hasExpired()) {
     auto result = this->tryLock();
 
-    if(result == -1 or result != -2) {
+    if(result == -1 || result != -2) {
       return result;
     }
 
@@ -88,14 +88,14 @@ int LockerImpl::lock(MSec timeout) {
 /**
  * @brief is locked
  */
-bool LockerImpl::isLocked() const {
+bool Locker::isLocked() const {
   return hFile != INVALID_HANDLE_VALUE;
 }
 
 /**
  * @brief Unlock a file
  */
-void LockerImpl::unlock() {
+void Locker::unlock() {
   if(this->isLocked()) {
     CloseHandle(hFile);
     hFile = INVALID_HANDLE_VALUE;

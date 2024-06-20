@@ -1,5 +1,4 @@
 #pragma once  // #include only once see https://en.wikipedia.org/wiki/Pragma_once
-#ifdef _WIN32
 
 // Copyright (c) 2024 Sri Lakshmi Kanthan P
 //
@@ -8,67 +7,54 @@
 
 #include <QObject>
 #include <QDir>
-#include <QDeadlineTimer>
-#include <QThread>
-
-#define NOMINMAX
-#include <windows.h>
-#undef NOMINMAX
-#include <corecrt_io.h>
 #include <chrono>
 
 #include "types/lockmode/lockmode.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
-class LockerImpl : public QObject {
+class ILocker : public QObject {
  private:
-  Q_DISABLE_COPY(LockerImpl)
-
- private:
-  using MSec = std::chrono::milliseconds;
-
- private:
-  HANDLE hFile = INVALID_HANDLE_VALUE;
-  types::LockMode mode;
-  QString file;
+  Q_DISABLE_COPY(ILocker)
 
  private: // Just for qt
   Q_OBJECT
 
+ private:
+  using MSec = std::chrono::milliseconds;
+
  public:
   /**
-   * @brief Construct a new Locker object
+   * @brief Construct a new ILocker object
    */
-  LockerImpl(const QString, types::LockMode mode, QObject *parent = nullptr);
+  ILocker(QObject *parent = nullptr);
 
   /**
-   * @brief Destroy the Locker object
+   * @brief Destroy the ILocker object
    */
-  ~LockerImpl();
+  virtual ~ILocker() = default;
 
   /**
    * @brief is locked
    */
-  bool isLocked() const;
+  virtual bool isLocked() const = 0;
 
   /**
    * @brief Try to lock a file
    */
-  int tryLock();
+  virtual int tryLock() = 0;
 
   /**
    * @brief Lock a file
    *
    * @param file
    */
-  int lock(MSec timeout = MSec::max());;
+  virtual int lock(MSec timeout = MSec::max()) = 0;
 
   /**
    * @brief Unlock a file
    *
    * @param file
    */
-  void unlock();
+  virtual void unlock() = 0;
 };
 }  // namespace srilakshmikanthanp::pulldog::common
-#endif

@@ -1,5 +1,4 @@
 #pragma once  // #include only once see https://en.wikipedia.org/wiki/Pragma_once
-#ifdef _WIN32 // only windows
 
 // Copyright (c) 2024 Sri Lakshmi Kanthan P
 //
@@ -7,31 +6,22 @@
 // https://opensource.org/licenses/MIT
 
 #include <QObject>
-#include <QThread>
 #include <QDir>
-#include <QMutex>
-#include <QMutexLocker>
-
-#include <windows.h>
 
 namespace srilakshmikanthanp::pulldog::common {
 /**
  * @brief Currently a wrapper around QFileSystemWatcher
  */
-class WatchImpl : public QObject {
+class IWatch : public QObject {
  private:
-  Q_DISABLE_COPY(WatchImpl)
+  Q_DISABLE_COPY(IWatch)
 
  private: // Just for qt
   Q_OBJECT
 
  signals:
   void fileCreated(const QString &dir, const QString &file);
-
- signals:
   void fileRemoved(const QString &dir, const QString &file);
-
- signals:
   void fileUpdated(const QString &dir, const QString &file);
 
  signals:
@@ -51,62 +41,30 @@ class WatchImpl : public QObject {
   /**
    * @brief Construct a new Watch object
    */
-  WatchImpl(QObject *parent = nullptr);
+  IWatch(QObject *parent = nullptr);
 
   /**
    * @brief Destroy the Watch object
    */
-  ~WatchImpl();
+  virtual ~IWatch() = default;
 
   /**
    * @brief Remove a path from watch
    *
    * @param path
    */
-  void removePath(const QString &path);
+  virtual void removePath(const QString &path) = 0;
 
   /**
    * @brief paths
    */
-  QStringList paths() const;
+  virtual QStringList paths() const = 0;
 
   /**
    * @brief Add a path to watch
    *
    * @param path
    */
-  void addPath(const QString &path, bool recursive = true);
-
- private:
-  // structure to hold the directory Info
-  struct DirWatch {
-    OVERLAPPED overlapped;
-    QString baseDir;
-    HANDLE handle;
-    QString oldFileName;
-    bool recursive;
-    alignas(4) uint8_t buffer[1024];
-    WatchImpl* watcher;
-  };
-
- private:
-  // process the file info from ReadDirectoryChangesW
-  void processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo);
-
-  // get the file name from the handle
-  QString getFileNameFromHandle(HANDLE handle) const;
-
- private:
-  // callback function for ReadDirectoryChangesW
-  static void CALLBACK DirectoryChangesCallback(
-    DWORD errorCode,
-    DWORD numberOfBytesTransfered,
-    LPOVERLAPPED overlapped
-  );
-
- private:
-  // list of handles watched by ReadDirectoryChangesW
-  QList<DirWatch*> directories;
+  virtual void addPath(const QString &path, bool recursive = true) = 0;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::watcher
-#endif  // _WIN32
