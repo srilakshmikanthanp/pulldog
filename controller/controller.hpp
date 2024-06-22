@@ -67,13 +67,12 @@ class Controller : public QObject {
  private:
   void processPendingFileUpdate();
 
- private:  // Private members
+ public:  // Public members
   /**
    * @brief Construct a new Controller object
    */
   Controller(const QString &destRoot, QObject *parent = nullptr);
 
- public:  // Public members
   /**
    * @brief Destroy the Controller object
    */
@@ -98,10 +97,5 @@ class Controller : public QObject {
    * @brief Add a path to watch
    */
   void addPath(const QString &path, bool recursive = true);
-
-  /**
-   * @brief Instance of the controller
-   */
-  static Controller& instance(const QString &destRoot, QObject *parent = nullptr);
 };
 }  // namespace srilakshmikanthanp::pulldog

@@ -65,7 +65,7 @@ std::string getAppHome() {
  * @brief Get App Log File
  */
 std::string getAppLogFile() {
-  return (std::filesystem::path(getAppHome()) / "clipbird.log").string();
+  return (std::filesystem::path(getAppHome()) / "pull.log").string();
 }
 
 /**
@@ -101,5 +101,19 @@ const char* getAppDonatePage() {
  */
 const char* getAppOrgName() {
   return PULLDOG_ORG_NAME;
+}
+
+/**
+ * @brief Apps window minimum size
+ */
+QSize getAppMinSize() {
+  return QSize(800, 600);
+}
+
+/**
+ * @brief Get System Download Path
+ */
+QString getDownloadPath() {
+  return QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
 }
 }  // namespace srilakshmikanthanp::pulldog::config

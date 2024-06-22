@@ -162,6 +162,7 @@
         "qfile": "cpp",
         "qsharedpointer": "cpp",
         "qlocalsocket": "cpp",
-        "qthread": "cpp"
+        "qthread": "cpp",
+        "qstackedwidget": "cpp"
     }
 }

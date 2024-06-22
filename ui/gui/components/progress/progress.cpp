@@ -15,7 +15,7 @@ namespace srilakshmikanthanp::pulldog::ui::gui::components {
 Progress::Progress(models::Transfer transfer, QWidget *parent)
     : QWidget(parent), transfer(transfer) {
   // create progress bar
-  progressBar = new QProgressBar(this);
+  progressBar = new QProgressBar();
   progressBar->setRange(0, 100);
   progressBar->setValue(0);
 
@@ -23,14 +23,21 @@ Progress::Progress(models::Transfer transfer, QWidget *parent)
   auto from    = new QLabel(transfer.getFrom(), this);
   auto to      = new QLabel(transfer.getTo(), this);
 
+  // set overflow to wrap
+  from->setWordWrap(true);
+  to->setWordWrap(true);
+
   // create layout this shows copy from and copy to with progress bar
-  auto hlayout = new QHBoxLayout(this);
+  auto hlayout = new QHBoxLayout();
   hlayout->addWidget(from);
-  hlayout->addWidget(new QLabel("->", this));
+  hlayout->addWidget(new QLabel("to"));
   hlayout->addWidget(to);
 
+  hlayout->setAlignment(Qt::AlignLeft);
+  hlayout->setSpacing(10);
+
   // vertical layout
-  auto vlayout = new QVBoxLayout(this);
+  auto vlayout = new QVBoxLayout();
   vlayout->addLayout(hlayout);
   vlayout->addWidget(progressBar);
 

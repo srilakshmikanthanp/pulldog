@@ -18,6 +18,7 @@ class Storage : public QObject {
   const char* filesGroup  = "files";
 
  private: // keys
+  const char* downloadPath = "downloadPath";
   const char* paths = "paths";
 
  private:  // qt
@@ -66,6 +67,11 @@ class Storage : public QObject {
    * @brief Remove path from store
    */
   void removePath(const QString& path);
+
+  /**
+   * @brief Get the Download Path
+   */
+  QString getDownloadPath();
 
   /**
    * @brief Instance of the storage

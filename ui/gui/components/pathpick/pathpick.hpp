@@ -54,7 +54,7 @@ class PathPick : public QWidget {
    *
    * @param parent
    */
-  PathPick(QString path, QWidget *parent = nullptr);
+  PathPick(QWidget *parent = nullptr);
 
   /**
    * @brief Destroy the Progress object

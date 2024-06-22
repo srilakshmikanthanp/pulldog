@@ -11,7 +11,7 @@ namespace srilakshmikanthanp::pulldog::ui::gui::components {
  *
  * @param parent
  */
-PathPick::PathPick(QString path, QWidget *parent) : QWidget(parent), path(path) {
+PathPick::PathPick(QWidget *parent) : QWidget(parent) {
   // create layout
   auto layout = new QHBoxLayout(this);
 
@@ -20,13 +20,17 @@ PathPick::PathPick(QString path, QWidget *parent) : QWidget(parent), path(path) 
 
   // add widgets to layout
   layout->addWidget(label);
+  layout->addStretch();
   layout->addWidget(button);
 
   // create label
   label->setText(path);
 
   // connect button
-  connect(button, &QPushButton::clicked, this, &PathPick::onBrowse);
+  connect(
+    button, &QPushButton::clicked,
+    this, &PathPick::onBrowse
+  );
 
   // set layout
   setLayout(layout);

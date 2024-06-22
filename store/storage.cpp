@@ -66,6 +66,13 @@ void Storage::removePath(const QString& path) {
 }
 
 /**
+ * @brief Get the Download Path
+ */
+QString Storage::getDownloadPath() {
+  return this->settings->value(this->downloadPath).toString();
+}
+
+/**
  * @brief Instance of the storage
  */
 Storage& Storage::instance() {

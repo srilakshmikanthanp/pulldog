@@ -8,6 +8,7 @@
 // Qt headers
 #include <QSysInfo>
 #include <QSize>
+#include <QStandardPaths>
 
 // C++ headers
 #include <filesystem>
@@ -90,4 +91,14 @@ const char* getAppDonatePage();
  * @return const char*
  */
 const char* getAppOrgName();
+
+/**
+ * @brief Apps window minimum size
+ */
+QSize getAppMinSize();
+
+/**
+ * @brief Get System Download Path
+ */
+QString getDownloadPath();
 }  // namespace srilakshmikanthanp::pulldog::config

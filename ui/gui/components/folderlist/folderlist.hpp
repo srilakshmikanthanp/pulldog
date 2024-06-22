@@ -17,10 +17,10 @@ namespace srilakshmikanthanp::pulldog::ui::gui::components {
 /**
  * @brief Watch Tile component is a tile to watch a directory
  */
-class WatchTile : public QWidget {
+class FolderTile : public QWidget {
  private:
 
-  Q_DISABLE_COPY(WatchTile)
+  Q_DISABLE_COPY(FolderTile)
 
  private:
 
@@ -61,12 +61,12 @@ class WatchTile : public QWidget {
    * @param path
    * @param parent
    */
-  WatchTile(const QString &path, QWidget *parent = nullptr);
+  FolderTile(const QString &path, QWidget *parent = nullptr);
 
   /**
    * @brief Destroy the Watch Tile object
    */
-  ~WatchTile() = default;
+  ~FolderTile() = default;
 
   /**
    * @brief get the path
@@ -77,13 +77,13 @@ class WatchTile : public QWidget {
 };
 
 /**
- * @brief WatchList component is a list of directories to watch
+ * @brief FolderList component is a list of directories to watch
  * for changes
  */
-class WatchList : public QWidget {
+class FolderList : public QWidget {
  private:
 
-  Q_DISABLE_COPY(WatchList)
+  Q_DISABLE_COPY(FolderList)
 
  private:
 
@@ -92,9 +92,8 @@ class WatchList : public QWidget {
  private:
 
   QPushButton *addButton   = new QPushButton(this);
-  QLabel *label            = new QLabel(this);
   QVBoxLayout *tilesLayout = new QVBoxLayout();
-  QList<WatchTile *> tiles;
+  QList<FolderTile *> tiles;
 
  private:
 
@@ -116,29 +115,29 @@ class WatchList : public QWidget {
   /**
    * @brief signal to emit when the watchlist is changed
    */
-  void watchListChanged(QStringList watchlist);
+  void folderListChanged(QStringList watchlist);
 
  public:
 
   /**
-   * @brief Construct a new WatchList object
+   * @brief Construct a new FolderList object
    *
    * @param watchlist
    * @param parent
    */
-  WatchList(QStringList watchlist, QWidget *parent = nullptr);
+  FolderList(QWidget *parent = nullptr);
 
   /**
-   * @brief Destroy the WatchList object
+   * @brief Destroy the FolderList object
    */
-  ~WatchList();
+  ~FolderList();
 
   /**
    * @brief set the watchlist
    *
    * @param watchlist
    */
-  void setWatchList(QStringList watchlist);
+  void setFolderList(QStringList watchlist);
 
   /**
    * @brief Add a directory to watchlist
@@ -155,6 +154,6 @@ class WatchList : public QWidget {
    *
    * @return QStringList
    */
-  QStringList getWatchList() const;
+  QStringList getFolderList() const;
 };
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::components

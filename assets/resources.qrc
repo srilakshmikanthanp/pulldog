@@ -9,6 +9,7 @@
 <RCC version="1.0">
   <qresource>
     <file>images/logo.png</file>
+    <file>images/logo.ico</file>
   </qresource>
 
   <qresource>

@@ -3,52 +3,58 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#include "watchlist.hpp"
+#include "folderlist.hpp"
 
 namespace srilakshmikanthanp::pulldog::ui::gui::components {
 /**
  * @brief Construct a new Watch Tile object
  */
-WatchTile::WatchTile(const QString &path, QWidget* parent) : path(path), QWidget(parent) {
+FolderTile::FolderTile(const QString &path, QWidget* parent) : path(path), QWidget(parent) {
   // set up the layout
-  auto layout = new QHBoxLayout(this);
+  auto layout = new QHBoxLayout();
 
   // set up the language
   this->setupLanguage();
 
   layout->addWidget(label);
+  layout->addStretch();
   layout->addWidget(removeButton);
 
   // set up the connections
-  connect(removeButton, &QPushButton::clicked, this, &WatchTile::onRemove);
+  connect(
+    removeButton, &QPushButton::clicked,
+    this, &FolderTile::onRemove
+  );
+
+  setLayout(layout);
 }
 
 /**
  * @brief Set up the language
  */
-void WatchTile::setupLanguage() {
+void FolderTile::setupLanguage() {
   label->setText(path);
-  removeButton->setText(tr("Remove"));
+  removeButton->setText(tr("-"));
 }
 
 /**
  * @brief on remove button clicked
  */
-void WatchTile::onRemove() {
+void FolderTile::onRemove() {
   emit removeWatchTile(path);
 }
 
 /**
  * @brief Get the path
  */
-QString WatchTile::getPath() const {
+QString FolderTile::getPath() const {
   return path;
 }
 
 /**
  * @brief Construct a new Watch List object
  */
-WatchList::WatchList(QStringList watchList, QWidget* parent) : QWidget(parent) {
+FolderList::FolderList(QWidget* parent) : QWidget(parent) {
   // set up the layout
   auto layout = new QVBoxLayout(this);
 
@@ -56,29 +62,26 @@ WatchList::WatchList(QStringList watchList, QWidget* parent) : QWidget(parent) {
   this->setupLanguage();
 
   // set up the connections
-  connect(addButton, &QPushButton::clicked, this, &WatchList::onAdd);
+  connect(
+    addButton, &QPushButton::clicked,
+    this, &FolderList::onAdd
+  );
 
-  // label layout
-  auto labelLayout = new QHBoxLayout();
   auto btnLayout = new QHBoxLayout();
-
-  // add label to the layout
-  labelLayout->addWidget(label);
   btnLayout->addWidget(addButton);
 
+  // set button to end
+  btnLayout->insertStretch(0);
+
   // add label layout to the layout
-  layout->addLayout(labelLayout);
   layout->addLayout(tilesLayout);
   layout->addLayout(btnLayout);
-
-  // set up the watchList
-  this->setWatchList(watchList);
 }
 
 /**
  * @brief Destroy the Watch List object
  */
-WatchList::~WatchList() {
+FolderList::~FolderList() {
   for (auto tile : tiles) {
     tile->deleteLater();
   }
@@ -87,15 +90,14 @@ WatchList::~WatchList() {
 /**
  * @brief Set up the language
  */
-void WatchList::setupLanguage() {
-  label->setText(tr("WatchList"));
+void FolderList::setupLanguage() {
   addButton->setText(tr("Add"));
 }
 
 /**
  * @brief on Add
  */
-void WatchList::onAdd() {
+void FolderList::onAdd() {
   auto path = QFileDialog::getExistingDirectory(
     this, tr("Select a directory"), QDir::homePath()
   );
@@ -110,7 +112,7 @@ void WatchList::onAdd() {
 /**
  * @brief set the watchList
  */
-void WatchList::setWatchList(QStringList watchList) {
+void FolderList::setFolderList(QStringList watchList) {
   // clear the tiles
   for (auto tile : tiles) {
     tile->deleteLater();
@@ -127,24 +129,24 @@ void WatchList::setWatchList(QStringList watchList) {
 /**
  * @brief Add a directory to watchList
  */
-void WatchList::addPath(const QString &path) {
-  auto tile = new WatchTile(path, this);
+void FolderList::addPath(const QString &path) {
+  auto tile = new FolderTile(path, this);
   watchList.append(path);
   tilesLayout->addWidget(tile);
   tiles.append(tile);
 
   connect(
-    tile, &WatchTile::removeWatchTile,
-    this, &WatchList::removePath
+    tile, &FolderTile::removeWatchTile,
+    this, &FolderList::removePath
   );
 
-  emit watchListChanged(watchList);
+  emit folderListChanged(watchList);
 }
 
 /**
  * @brief Remove a directory from watchList
  */
-void WatchList::removePath(const QString &path) {
+void FolderList::removePath(const QString &path) {
   watchList.removeOne(path);
 
   for (auto tile : tiles) {
@@ -155,7 +157,7 @@ void WatchList::removePath(const QString &path) {
     }
   }
 
-  emit watchListChanged(
+  emit folderListChanged(
     watchList
   );
 }
@@ -163,7 +165,7 @@ void WatchList::removePath(const QString &path) {
 /**
  * @brief Get the watchList
  */
-QStringList WatchList::getWatchList() const {
+QStringList FolderList::getFolderList() const {
   return watchList;
 }
 } // namespace srilakshmikanthanp::pulldog::ui::gui::components

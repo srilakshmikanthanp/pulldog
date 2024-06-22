@@ -134,6 +134,12 @@ set_target_properties(pulldog PROPERTIES
   MACOSX_BUNDLE TRUE
 )
 
+# Add Platform specific definitions for win
+if(WIN32)
+  target_link_libraries(pulldog PRIVATE runtimeobject.lib)
+  target_link_libraries(pulldog PRIVATE Dwmapi.lib)
+endif()
+
 # add target compiler options GCC -std=c++17
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   target_compile_options(pulldog PRIVATE -std=c++17)

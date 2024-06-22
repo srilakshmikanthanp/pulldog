@@ -167,12 +167,4 @@ QStringList Controller::paths() const {
 void Controller::removePath(const QString &path) {
   watcher.removePath(path);
 }
-
-/**
- * @brief Instance of the controller
- */
-Controller& Controller::instance(const QString &destRoot, QObject *parent) {
-  static Controller controller(destRoot, parent);
-  return controller;
-}
 }  // namespace srilakshmikanthanp::pulldog

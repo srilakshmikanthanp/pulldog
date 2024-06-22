@@ -143,39 +143,3 @@ QLineEdit {
   margin: 2px;
   padding: 6px;
 }
-
-/***************** Object Names *****************/
-
-QFrame#Clipbird {
-  border: 1px solid rgba(0, 0, 0, 0.110);
-  border-radius: 10px;
-}
-
-#Status {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-#Device > * {
-  font-weight: 550;
-}
-
-#ClipTile {
-  background: #ededed;
-  color: white;
-  border-radius: 10px;
-  max-width: 300;
-  min-width: 300;
-}
-
-#ClipTile > QPushButton {
-  background: none;
-}
-
-#ClipTile > QLabel {
-  background: #ededed;
-  max-height: 80px;
-  min-height: 80px;
-}
