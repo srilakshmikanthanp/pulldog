@@ -4,6 +4,7 @@
 // https://opensource.org/licenses/MIT
 
 #include "transfer.hpp"
+#include <iostream>
 
 namespace srilakshmikanthanp::pulldog::models {
 /**

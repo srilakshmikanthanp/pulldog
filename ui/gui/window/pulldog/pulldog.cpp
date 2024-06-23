@@ -39,7 +39,51 @@ PullDog::PullDog(Controller *controller, QWidget *parent)
   layout->addWidget(stackedWidget);
 
   // set the layout
-  setLayout(containerLayout);
+  setLayout(layout);
+
+  // on settings clicked
+  connect(
+    titleBar, &components::TitleBar::settingsClicked,
+    [this] { stackedWidget->setCurrentIndex(1); }
+  );
+
+  // on close
+  connect(
+    settings, &screens::Settings::onCloseClicked,
+    [this] { stackedWidget->setCurrentIndex(0); }
+  );
+
+  // connect added
+  connect(
+    settings, &screens::Settings::onFolderAdded,
+    this, &PullDog::onFolderAdded
+  );
+
+  // connect removed
+  connect(
+    settings, &screens::Settings::onFolderRemoved,
+    this, &PullDog::onFolderRemoved
+  );
+
+  // connect destination path changed
+  connect(
+    settings, &screens::Settings::destinationPathChanged,
+    this, &PullDog::destinationPathChanged
+  );
+}
+
+/**
+ * @brief On Progress Changed
+ */
+void PullDog::onProgressChanged(models::Transfer transfer, double progress) {
+  auto progressList = pullInfo->getProgressList();
+
+  for (auto p : progressList) {
+    if (p->getTransfer() == transfer) {
+      p->setProgress(progress);
+      return;
+    }
+  }
 }
 
 /**
@@ -67,8 +111,15 @@ bool PullDog::removeTransfer(const models::Transfer &transfer) {
 /**
  * @brief Set the Watch List
  */
-void PullDog::setWatchList(const QStringList &watchList) {
-  settings->setWatchList(watchList);
+void PullDog::addWatchPath(const QString &path) {
+  settings->addWatchPath(path);
+}
+
+/**
+ * @brief Remove watch List
+ */
+void PullDog::removeWatchPath(const QString &path) {
+  settings->removeWatchPath(path);
 }
 
 /**

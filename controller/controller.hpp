@@ -20,31 +20,41 @@
 #include "common/locker/locker.hpp"
 #include "common/watch/watch.hpp"
 #include "models/transfer/transfer.hpp"
+#include "store/storage.hpp"
 
 namespace srilakshmikanthanp::pulldog {
 class Controller : public QObject {
  private: // Private members
-  common::Copier copier;
-  QDir destinationRoot;
-  QThread thread;
   common::Watch watcher;
+  QDir destinationRoot;
 
  private:
+  // current coping files with copier object
+  QMap<models::Transfer, common::Copier*> copingFiles;
+
   // Pending file update with last update time
-  QMap<QPair<QString, QString>, long long> pendingFileUpdate;
+  QMap<models::Transfer, long long> pendingFiles;
+
 
  private:
   // timer for checking pending file update
   QTimer timer;
 
  private:
-  long long THRESHOLD = 10000;
+  long long threshold = 10000;
 
  private:  // Just for qt
   Q_OBJECT
 
  private:  // slots
   void handleFileUpdate(const QString dir, const QString path);
+
+ private:
+  void handleFileRename(
+    const QString directory,
+    const QString oldFile,
+    const QString newFile
+  );
 
  signals:
   void onCopyStart(const models::Transfer &transfer);
@@ -56,6 +66,9 @@ class Controller : public QObject {
   void onCopyEnd(const models::Transfer &transfer);
 
  signals:
+  void onCopyCancel(const models::Transfer &transfer);
+
+ signals:
   void pathsChanged(const QString &path, bool isAdded);
 
  signals:
@@ -65,18 +78,26 @@ class Controller : public QObject {
   Q_SIGNAL void copy(const QString &src, const QString &dest);
 
  private:
+  /**
+   * @brief start to Copy the file with copier object
+   */
+  void copy(const models::Transfer &transfer);
+
+  /**
+   * @brief Slot for time process pending file update
+   */
   void processPendingFileUpdate();
 
  public:  // Public members
   /**
    * @brief Construct a new Controller object
    */
-  Controller(const QString &destRoot, QObject *parent = nullptr);
+  Controller(QObject *parent = nullptr);
 
   /**
    * @brief Destroy the Controller object
    */
-  ~Controller();
+  ~Controller() = default;
 
   /**
    * @brief get the destination root
@@ -84,18 +105,33 @@ class Controller : public QObject {
   QString getDestinationRoot() const;
 
   /**
+   * @brief set the destination root
+   */
+  void setDestinationRoot(const QString &path);
+
+  /**
+   * @brief Get threshold
+   */
+  long long getThreshold() const;
+
+  /**
+   * @brief Set threshold
+   */
+  void setThreshold(long long threshold);
+
+  /**
    * @brief Get the Paths object
    */
-  QStringList paths() const;
+  QStringList watchPaths() const;
 
   /**
    * @brief Remove a path from watch
    */
-  void removePath(const QString &path);
+  void removeWatchPath(const QString &path);
 
   /**
    * @brief Add a path to watch
    */
-  void addPath(const QString &path, bool recursive = true);
+  void addWatchPath(const QString &path, bool recursive = true);
 };
 }  // namespace srilakshmikanthanp::pulldog

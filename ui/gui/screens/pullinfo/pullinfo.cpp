@@ -24,6 +24,9 @@ PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
   this->stackLayout->addWidget(this->noProgress);
   this->stackLayout->addWidget(this->scrollArea);
 
+  // align top
+  scrollAreaLayout->setAlignment(Qt::AlignTop);
+
   // set the layout
   this->setLayout(this->stackLayout);
 }
@@ -52,6 +55,9 @@ void PullInfo::removeProgress(components::Progress *progress) {
 
   // delete the progress
   progress->deleteLater();
+
+  // repaint
+  this->repaint();
 }
 
 /**
@@ -65,6 +71,9 @@ void PullInfo::addProgress(components::Progress *progress) {
 
   // add the progress to the list
   this->progressList.append(progress);
+
+  // repaint
+  this->repaint();
 }
 
 /**

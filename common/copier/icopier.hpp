@@ -36,6 +36,9 @@ class ICopier : public QObject {
   void onCopyEnd(const models::Transfer&);
 
  signals:
+  void onCopyCancel(const models::Transfer&);
+
+ signals:
   void onError(const QString&);
 
  public:
@@ -48,11 +51,16 @@ class ICopier : public QObject {
   /**
    * @brief Destroy the ICopier object
    */
-  ~ICopier() = default;
+  virtual ~ICopier() = default;
 
   /**
-   * @brief Copy the file
+   * @brief start
    */
-  virtual void copy(QString src, QString dest) = 0;
+  virtual void start() = 0;
+
+  /**
+   * @brief Cancel the copy
+   */
+  virtual void cancel() = 0;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::copier

@@ -8,10 +8,15 @@
 #include <QFile>
 #include <QLockFile>
 #include <QObject>
+#include <QThread>
+#include <QMutex>
+#include <QMutexLocker>
 
 #define NOMINMAX
 #include <windows.h>
 #undef NOMINMAX
+
+#include <atomic>
 
 #include "common/copier/icopier.hpp"
 #include "common/locker/locker.hpp"
@@ -20,34 +25,49 @@
 
 namespace srilakshmikanthanp::pulldog::common {
 /**
- * @brief A Class that copies a file from one location to another
- * with a progress signal
+ * Forward declaration
  */
-class Copier : public ICopier {
+class Copier;
+
+/**
+ * @brief Private class for Copier
+ */
+class CopierPrivate : public QObject {
  private:
 
-  Q_DISABLE_COPY(Copier)
+  Q_DISABLE_COPY(CopierPrivate)
 
  private:  // Just for qt
 
   Q_OBJECT
 
- public:
+ private:
+  std::atomic<bool> isCompleted = false;
+  const models::Transfer transfer;
+  BOOL cancelFlag = false;
+  common::Copier *copier;
+  QMutex mutex;
 
+ public:
   /**
    * @brief Construct a new Copier object
    */
-  Copier(QObject *parent = nullptr);
+  CopierPrivate(models::Transfer transfer, common::Copier *copier);
 
   /**
    * @brief Destroy the Copier object
    */
-  ~Copier() = default;
+  ~CopierPrivate() = default;
 
   /**
-   * @brief Copy the file
+   * Start
    */
-  void copy(QString src, QString dest) override;
+  void start();
+
+  /**
+   * @brief Cancel the copy
+   */
+  void cancel();
 
  private:
   /**
@@ -64,5 +84,45 @@ class Copier : public ICopier {
     HANDLE hDestinationFile,
     LPVOID lpData
   );
+};
+
+/**
+ * @brief A Class that copies a file from one location to another
+ * with a progress signal
+ */
+class Copier : public ICopier {
+ private:
+
+  Q_DISABLE_COPY(Copier)
+
+ private:  // Just for qt
+
+  Q_OBJECT
+
+ private:
+  CopierPrivate privateInstance;
+  QThread thread;
+
+ public:
+
+  /**
+   * @brief Construct a new Copier object
+   */
+  Copier(models::Transfer transfer, QObject *parent = nullptr);
+
+  /**
+   * @brief Destroy the Copier object
+   */
+  ~Copier();
+
+  /**
+   * @brief start
+   */
+  void start() override;
+
+  /**
+   * @brief Cancel the copy
+   */
+  void cancel() override;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::copier

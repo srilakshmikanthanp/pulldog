@@ -10,6 +10,8 @@
 #include <QStyleHints>
 #include <QWidget>
 #include <QWidget>
+#include <QFile>
+#include <QRegularExpression>
 
 #ifdef _WIN32
 #define NOMINMAX

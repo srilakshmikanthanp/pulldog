@@ -143,3 +143,33 @@ QLineEdit {
   margin: 2px;
   padding: 6px;
 }
+
+QProgressBar {
+  background-color: #f9f9f9;
+  border: 1px solid #167dff;
+  border-radius: 5px;
+  margin: 2px;
+  padding: 6px;
+}
+
+QProgressBar::chunk {
+  background-color: #167dff;
+  border-radius: 5px;
+}
+
+QLabel#Title {
+  font-size: 25px;
+  font-weight: 700;
+}
+
+QLabel#Heading {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+QPushButton#Transparent {
+  background-color: transparent;
+  color: #167dff;
+  border: none;
+  font-weight: 700;
+}

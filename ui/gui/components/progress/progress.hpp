@@ -11,6 +11,8 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QPainter>
+#include <QStyleOption>
 
 #include "models/transfer/transfer.hpp"
 
@@ -28,6 +30,8 @@ class Progress : public QWidget {
  private:
   QProgressBar *progressBar;
   models::Transfer transfer;
+  QLabel *from;
+  QLabel *to;
 
  public:
   /**
@@ -62,5 +66,10 @@ class Progress : public QWidget {
    * @return models::Transfer
    */
   models::Transfer getTransfer() const;
+
+  /**
+   * @brief Paint event
+   */
+  void paintEvent(QPaintEvent *event) override;
 };
 } // namespace srilakshmikanthanp::pulldog::ui::gui::components

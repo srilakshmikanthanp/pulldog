@@ -8,6 +8,8 @@
 #include <QObject>
 #include <QSettings>
 
+#include "constants/constants.hpp"
+
 namespace srilakshmikanthanp::pulldog::storage {
 class Storage : public QObject {
  private:  // settings
@@ -20,6 +22,11 @@ class Storage : public QObject {
  private: // keys
   const char* downloadPath = "downloadPath";
   const char* paths = "paths";
+
+ signals:
+  void onDownloadPathChanged(const QString& path);
+  void onPathAdded(const QString& path);
+  void onPathRemoved(const QString& path);
 
  private:  // qt
 
@@ -72,6 +79,11 @@ class Storage : public QObject {
    * @brief Get the Download Path
    */
   QString getDownloadPath();
+
+  /**
+   * @brief Set the Download Path
+   */
+  void setDownloadPath(const QString& path);
 
   /**
    * @brief Instance of the storage

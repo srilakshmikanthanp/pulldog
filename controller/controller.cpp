@@ -18,10 +18,82 @@ void Controller::handleFileUpdate(const QString dir, const QString path) {
   }
 
   // Create a key for the pending file update
-  auto key = QPair<QString, QString>(srcFile, destFile);
+  auto key = models::Transfer(srcFile, destFile);
 
   // Add or update the pending file update
-  pendingFileUpdate[key] = QDateTime::currentMSecsSinceEpoch();
+  pendingFiles[key] = QDateTime::currentMSecsSinceEpoch();
+}
+
+void Controller::handleFileRename(
+  const QString directory,
+  const QString oldFile,
+  const QString newFile) {
+  this->handleFileUpdate(directory, newFile);
+}
+
+/**
+ * @brief start to Copy the file with copier object
+ */
+void Controller::copy(const models::Transfer &transfer) {
+  if(copingFiles.contains(transfer)) {
+    auto copier = copingFiles[transfer];
+    copier->cancel();
+    copingFiles.remove(transfer);
+  }
+
+  // create a copier object
+  auto copier = new common::Copier(transfer, this);
+
+  // connect the signals
+  connect(
+    copier, &common::Copier::onCopyStart,
+    this, &Controller::onCopyStart
+  );
+
+  connect(
+    copier, &common::Copier::onCopy,
+    this, &Controller::onCopy
+  );
+
+  connect(
+    copier, &common::Copier::onCopyEnd,
+    this, &Controller::onCopyEnd
+  );
+
+  connect(
+    copier, &common::Copier::onCopyCancel,
+    this, &Controller::onCopyCancel
+  );
+
+  connect(
+    copier, &common::Copier::onError,
+    this, &Controller::onError
+  );
+
+  // for delete the copier object
+  connect(
+    copier, &common::Copier::onCopyEnd,
+    copier, &common::Copier::deleteLater
+  );
+
+  connect(
+    copier, &common::Copier::onCopyCancel,
+    copier, &common::Copier::deleteLater
+  );
+
+  // add the copier to the coping files
+  copingFiles[transfer] = copier;
+
+  // to remove the copier from the map
+  connect(
+    copier, &common::Copier::destroyed,
+    [this, transfer]() {
+      copingFiles.remove(transfer);
+    }
+  );
+
+  // start the copier
+  copier->start();
 }
 
 /**
@@ -32,21 +104,20 @@ void Controller::processPendingFileUpdate() {
   auto currentTime = QDateTime::currentMSecsSinceEpoch();
 
   // iterate the pending file update
-  for(auto pending: pendingFileUpdate.keys()) {
+  for(auto pending: pendingFiles.keys()) {
     // get the last update time
-    auto lastUpdateTime = pendingFileUpdate[pending];
+    auto lastUpdateTime = pendingFiles[pending];
 
     // check the threshold
-    if(currentTime - lastUpdateTime < THRESHOLD) {
+    if(currentTime - lastUpdateTime < threshold) {
       continue;
     }
 
     // update the last update time
-    pendingFileUpdate[pending] = currentTime;
+    pendingFiles[pending] = currentTime;
 
     // extract the source and destination file
-    auto destFile = pending.second;
-    auto srcFile = pending.first;
+    auto srcFile = pending.getFrom();
 
     // create an locker object
     common::Locker locker(srcFile, types::LockMode::READ);
@@ -59,24 +130,18 @@ void Controller::processPendingFileUpdate() {
     // unlock the file
     locker.unlock();
 
-    // emit the copy signal
-    emit copy(srcFile, destFile);
-
     // remove the pending file update
-    pendingFileUpdate.remove(pending);
+    pendingFiles.remove(pending);
+
+    // do copy
+    this->copy(pending);
   }
 }
 
 /**
  * @brief Construct a new Controller object
  */
-Controller::Controller(const QString &destRoot, QObject *parent) : QObject(parent) {
-  // set the destination root directory
-  this->destinationRoot = QDir(destRoot);
-
-  // move the copier object to the thread
-  copier.moveToThread(&thread);
-
+Controller::Controller(QObject *parent) : QObject(parent) {
   // connect the signals
   connect(
     &watcher, &common::Watch::fileCreated,
@@ -89,35 +154,13 @@ Controller::Controller(const QString &destRoot, QObject *parent) : QObject(paren
   );
 
   connect(
+    &watcher, &common::Watch::fileRename,
+    this, &Controller::handleFileRename
+  );
+
+  connect(
     &watcher, &common::Watch::pathsChanged,
     this, &Controller::pathsChanged
-  );
-
-  // copy signal to copier
-  connect(
-    this, &Controller::copy,
-    &copier, &common::Copier::copy
-  );
-
-  // connect the signals
-  connect(
-    &copier, &common::Copier::onCopyStart,
-    this, &Controller::onCopyStart
-  );
-
-  connect(
-    &copier, &common::Copier::onCopy,
-    this, &Controller::onCopy
-  );
-
-  connect(
-    &copier, &common::Copier::onCopyEnd,
-    this, &Controller::onCopyEnd
-  );
-
-  connect(
-    &copier, &common::Copier::onError,
-    this, &Controller::onError
   );
 
   // connect the timer
@@ -126,16 +169,8 @@ Controller::Controller(const QString &destRoot, QObject *parent) : QObject(paren
     this, &Controller::processPendingFileUpdate
   );
 
-  // start the thread
-  thread.start();
-
   // start the timer
-  timer.start(THRESHOLD / 2);
-}
-
-Controller::~Controller() {
-  thread.quit();
-  thread.wait();
+  timer.start(threshold / 2);
 }
 
 /**
@@ -146,25 +181,46 @@ QString Controller::getDestinationRoot() const {
 }
 
 /**
+ * @brief set the destination root
+ */
+void Controller::setDestinationRoot(const QString &path) {
+  destinationRoot = QDir(path);
+}
+
+/**
+ * @brief Get threshold
+ */
+long long Controller::getThreshold() const {
+  return threshold;
+}
+
+/**
+ * @brief Set threshold
+ */
+void Controller::setThreshold(long long threshold) {
+  threshold = threshold;
+}
+
+/**
  * @brief Add a path to watch
  *
  * @param path
  */
-void Controller::addPath(const QString &path, bool recursive) {
-  return watcher.addPath(path, recursive);
+void Controller::addWatchPath(const QString &path, bool recursive) {
+  watcher.addPath(path, recursive);
 }
 
 /**
  * @brief Get the Paths object
  */
-QStringList Controller::paths() const {
+QStringList Controller::watchPaths() const {
   return watcher.paths();
 }
 
 /**
  * @brief Remove a path from watch
  */
-void Controller::removePath(const QString &path) {
+void Controller::removeWatchPath(const QString &path) {
   watcher.removePath(path);
 }
 }  // namespace srilakshmikanthanp::pulldog

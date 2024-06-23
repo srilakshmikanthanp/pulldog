@@ -26,14 +26,27 @@ class Settings : public QWidget {
   components::FolderList *watchList = new components::FolderList();
   components::PathPick *pathPick = new components::PathPick();
   QVBoxLayout *layout = new QVBoxLayout();
-  QLabel *pathPickLabel = new QLabel(tr("Destination Path"), this);
-  QLabel *watchListLabel = new QLabel(tr("Watch List"), this);
+  QLabel *pathPickLabel = new QLabel(tr("Destination Path"));
+  QLabel *watchListLabel = new QLabel(tr("Watch List"));
+  QPushButton *close = new QPushButton();
 
  signals:
   /**
-   * @brief signal to emit when the watchList is changed
+   * @brief signal to emit folder removed
    */
-  void watchListChanged(QStringList watchList);
+  void onFolderRemoved(const QString &path);
+
+ signals:
+  /**
+   * @brief signal on close
+   */
+  void onCloseClicked();
+
+ signals:
+  /**
+   * @brief signal to emit folder added
+   */
+  void onFolderAdded(const QString &path);
 
  signals:
   /**

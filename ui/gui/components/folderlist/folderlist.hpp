@@ -12,6 +12,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QGraphicsDropShadowEffect>
 
 namespace srilakshmikanthanp::pulldog::ui::gui::components {
 /**
@@ -28,8 +29,8 @@ class FolderTile : public QWidget {
 
  private:
 
-  QLabel *label             = new QLabel(this);
-  QPushButton *removeButton = new QPushButton(this);
+  QLabel *label             = new QLabel();
+  QPushButton *removeButton = new QPushButton();
 
  private:
 
@@ -91,7 +92,7 @@ class FolderList : public QWidget {
 
  private:
 
-  QPushButton *addButton   = new QPushButton(this);
+  QPushButton *addButton   = new QPushButton();
   QVBoxLayout *tilesLayout = new QVBoxLayout();
   QList<FolderTile *> tiles;
 
@@ -113,9 +114,15 @@ class FolderList : public QWidget {
 
  signals:
   /**
-   * @brief signal to emit when the watchlist is changed
+   * @brief signal to emit folder removed
    */
-  void folderListChanged(QStringList watchlist);
+  void onFolderRemoved(const QString &path);
+
+ signals:
+  /**
+   * @brief signal to emit folder added
+   */
+  void onFolderAdded(const QString &path);
 
  public:
 

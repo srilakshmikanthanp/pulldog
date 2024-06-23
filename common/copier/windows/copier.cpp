@@ -7,18 +7,58 @@
 
 namespace srilakshmikanthanp::pulldog::common {
 /**
- * @brief Construct a new Copier object
- *
- * @param src
- * @param dest
- * @param parent
+ * @brief Construct a new CopierPrivate object
  */
-Copier::Copier(QObject *parent) : ICopier(parent) {}
+CopierPrivate::CopierPrivate(models::Transfer transfer, common::Copier *copier)
+: transfer(transfer),
+  copier(copier) {
+  // Do nothing
+}
+
+/**
+ * Start
+ */
+void CopierPrivate::start() {
+  // emit the started signal
+  emit copier->onCopyStart(transfer);
+
+  // copy file blocking
+  if (CopyFileEx(
+    reinterpret_cast<LPCWSTR>(transfer.getFrom().utf16()),
+    reinterpret_cast<LPCWSTR>(transfer.getTo().utf16()),
+    copyFileCallBack,
+    this,
+    &cancelFlag,
+    COPY_FILE_RESTARTABLE | COPY_FILE_NO_BUFFERING
+  )) {
+    emit copier->onCopyEnd(transfer);
+    return;
+  }
+
+  // get the error
+  auto error = GetLastError();
+  auto msg = QString("Failed copy %1 to %2 : %3").arg(transfer.getFrom(), transfer.getTo(), QString::number(error));
+  emit copier->onError(msg);
+
+  // emit cancel signal
+  emit copier->onCopyCancel(transfer);
+}
+
+/**
+ * @brief Cancel the copy
+ */
+void CopierPrivate::cancel() {
+  QMutexLocker locker(&mutex);
+
+  if(!isCompleted) {
+    this->cancelFlag = true;
+  }
+}
 
 /**
  * @brief Copy file call back from CopyFileEx
  */
-DWORD CALLBACK Copier::copyFileCallBack(
+DWORD CALLBACK CopierPrivate::copyFileCallBack(
   LARGE_INTEGER totalFileSize,
   LARGE_INTEGER totalBytesTransferred,
   LARGE_INTEGER streamSize,
@@ -29,43 +69,53 @@ DWORD CALLBACK Copier::copyFileCallBack(
   HANDLE hDestinationFile,
   LPVOID lpData
 ) {
-  Copier *copier = reinterpret_cast<Copier *>(lpData);
-  auto from = utility::getFileNameFromHandle(hSourceFile);
-  auto to = utility::getFileNameFromHandle(hDestinationFile);
-  auto transfer = models::Transfer(from, to);
-  auto progress = static_cast<double>(totalBytesTransferred.QuadPart) / totalFileSize.QuadPart;
-  copier->emit onCopy(transfer, progress);
+  auto copierPrivate = reinterpret_cast<CopierPrivate *>(lpData);
+  auto progress = (static_cast<double>(totalBytesTransferred.QuadPart) / totalFileSize.QuadPart) * 100;
+  copierPrivate->copier->emit onCopy(copierPrivate->transfer, progress);
 
-  // if the copy is completed
-  if (totalBytesTransferred.QuadPart == totalFileSize.QuadPart) {
-    copier->emit onCopyEnd(transfer);
+  QMutexLocker locker(&copierPrivate->mutex);
+
+  // if cancel flag is set return 1 to cancel the copy
+  if (copierPrivate->cancelFlag) {
+    return PROGRESS_CANCEL;
   }
 
   // return 0 to continue the copy
-  return 0;
+  return PROGRESS_CONTINUE;
 }
 
 /**
- * @brief start copying
+ * @brief Construct a new Copier object
+ *
+ * @param src
+ * @param dest
+ * @param parent
  */
-void Copier::copy(QString source, QString destination) {
-  models::Transfer transfer(source, destination);
+Copier::Copier(models::Transfer transfer, QObject *parent)
+: ICopier(parent), privateInstance(transfer, this) {
+  privateInstance.moveToThread(&thread);
+  thread.start();
+}
 
-  // emit the started signal
-  emit onCopyStart(transfer);
+/**
+ * @brief Destroy the Copier object
+ */
+Copier::~Copier() {
+  thread.quit();
+  thread.wait();
+}
 
-  // copy file
-  if (!CopyFileEx(
-    reinterpret_cast<LPCWSTR>(source.utf16()),
-    reinterpret_cast<LPCWSTR>(destination.utf16()),
-    copyFileCallBack,
-    this,
-    FALSE,
-    COPY_FILE_RESTARTABLE | COPY_FILE_NO_BUFFERING
-  )) {
-    auto error = GetLastError();
-    emit onError("Failed to copy file " + source + " to " + destination + " Error: " + QString::number(error));
-    return;
-  }
+/**
+ * @brief start
+ */
+void Copier::start() {
+  QMetaObject::invokeMethod(&privateInstance, &CopierPrivate::start);
+}
+
+/**
+ * @brief Cancel the copy
+ */
+void Copier::cancel() {
+  privateInstance.cancel();
 }
 } // namespace srilakshmikanthanp::pulldog::common

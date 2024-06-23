@@ -13,12 +13,10 @@ FolderTile::FolderTile(const QString &path, QWidget* parent) : path(path), QWidg
   // set up the layout
   auto layout = new QHBoxLayout();
 
-  // set up the language
-  this->setupLanguage();
-
-  layout->addWidget(label);
-  layout->addStretch();
-  layout->addWidget(removeButton);
+  // set icon
+  removeButton->setIcon(QIcon(":/images/remove.png"));
+  removeButton->setObjectName("Transparent");
+  removeButton->setCursor(Qt::PointingHandCursor);
 
   // set up the connections
   connect(
@@ -26,7 +24,22 @@ FolderTile::FolderTile(const QString &path, QWidget* parent) : path(path), QWidg
     this, &FolderTile::onRemove
   );
 
-  setLayout(layout);
+  // set up the language
+  this->setupLanguage();
+
+  layout->addWidget(label);
+  layout->addWidget(removeButton);
+
+  // align the items
+  layout->setAlignment(label, Qt::AlignLeft);
+  layout->setAlignment(removeButton, Qt::AlignRight);
+
+  // set the layout
+  layout->setSpacing(0);
+  layout->setContentsMargins(0, 0, 0, 0);
+
+  // set the layout
+  this->setLayout(layout);
 }
 
 /**
@@ -34,7 +47,6 @@ FolderTile::FolderTile(const QString &path, QWidget* parent) : path(path), QWidg
  */
 void FolderTile::setupLanguage() {
   label->setText(path);
-  removeButton->setText(tr("-"));
 }
 
 /**
@@ -56,7 +68,7 @@ QString FolderTile::getPath() const {
  */
 FolderList::FolderList(QWidget* parent) : QWidget(parent) {
   // set up the layout
-  auto layout = new QVBoxLayout(this);
+  auto layout = new QVBoxLayout();
 
   // set up the language
   this->setupLanguage();
@@ -67,15 +79,21 @@ FolderList::FolderList(QWidget* parent) : QWidget(parent) {
     this, &FolderList::onAdd
   );
 
-  auto btnLayout = new QHBoxLayout();
-  btnLayout->addWidget(addButton);
-
-  // set button to end
-  btnLayout->insertStretch(0);
+  // set icon
+  addButton->setIcon(QIcon(":/images/plus.png"));
+  addButton->setObjectName("Transparent");
+  addButton->setCursor(Qt::PointingHandCursor);
+  addButton->setIconSize(QSize(24, 24));
 
   // add label layout to the layout
   layout->addLayout(tilesLayout);
-  layout->addLayout(btnLayout);
+  layout->addWidget(addButton);
+
+  // center align button
+  layout->setAlignment(addButton, Qt::AlignCenter);
+
+  // set the layout
+  this->setLayout(layout);
 }
 
 /**
@@ -91,7 +109,7 @@ FolderList::~FolderList() {
  * @brief Set up the language
  */
 void FolderList::setupLanguage() {
-  addButton->setText(tr("Add"));
+  addButton->setToolTip(tr("Add a directory to watch"));
 }
 
 /**
@@ -107,6 +125,9 @@ void FolderList::onAdd() {
   }
 
   this->addPath(path);
+
+  // emit the signal
+  emit onFolderAdded(path);
 }
 
 /**
@@ -120,6 +141,12 @@ void FolderList::setFolderList(QStringList watchList) {
 
   tiles.clear();
 
+  QLayoutItem *item = nullptr;
+
+  while (item = tilesLayout->takeAt(0)) {
+    delete item->widget();
+  }
+
   // add the tiles
   for (auto path : watchList) {
     this->addPath(path);
@@ -130,7 +157,7 @@ void FolderList::setFolderList(QStringList watchList) {
  * @brief Add a directory to watchList
  */
 void FolderList::addPath(const QString &path) {
-  auto tile = new FolderTile(path, this);
+  auto tile = new FolderTile(path);
   watchList.append(path);
   tilesLayout->addWidget(tile);
   tiles.append(tile);
@@ -140,7 +167,10 @@ void FolderList::addPath(const QString &path) {
     this, &FolderList::removePath
   );
 
-  emit folderListChanged(watchList);
+  connect(
+    tile, &FolderTile::removeWatchTile,
+    this, &FolderList::onFolderRemoved
+  );
 }
 
 /**
@@ -151,15 +181,12 @@ void FolderList::removePath(const QString &path) {
 
   for (auto tile : tiles) {
     if (tile->getPath() == path) {
+      tilesLayout->removeWidget(tile);
       tile->deleteLater();
       tiles.removeOne(tile);
       break;
     }
   }
-
-  emit folderListChanged(
-    watchList
-  );
 }
 
 /**

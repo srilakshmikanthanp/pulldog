@@ -11,14 +11,19 @@ QString getFileNameFromHandle(HANDLE hFile) {
   auto buffer = std::make_unique<WCHAR[]>(MAX_PATH);
 
   auto size = GetFinalPathNameByHandleW(
-    hFile, buffer.get(), MAX_PATH, VOLUME_NAME_DOS
+    hFile, buffer.get(), MAX_PATH, VOLUME_NAME_DOS | FILE_NAME_OPENED
   );
 
   if(size == 0) {
     throw std::runtime_error(QString("Error: %1").arg(GetLastError()).toStdString());
-  } else {
-    return QString::fromWCharArray(buffer.get(), size);;
   }
+
+  // We need to consistant path name
+  auto file = QString::fromWCharArray(buffer.get(), size).toStdString();
+  auto path = std::filesystem::canonical(file).string();
+
+  // return filename
+  return QString::fromStdString(path);
 }
 #endif
 

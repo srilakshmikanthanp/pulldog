@@ -22,7 +22,7 @@ void Watch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileIn
       dir->oldFileName = fileName;
       break;
     case FILE_ACTION_RENAMED_NEW_NAME:
-      emit fileMoved(dir->baseDir, dir->oldFileName, fileName);
+      emit fileRename(dir->baseDir, dir->oldFileName, fileName);
       break;
     case FILE_ACTION_REMOVED:
       emit fileRemoved(dir->baseDir, fileName);

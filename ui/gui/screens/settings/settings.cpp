@@ -12,28 +12,60 @@ namespace srilakshmikanthanp::pulldog::ui::gui::screens {
  * @param parent
  */
 Settings::Settings(QWidget *parent) : QWidget(parent) {
-  // add pathPickLabel
-  this->layout->addWidget(pathPickLabel);
+  // add Close Button
+  this->layout->addWidget(close);
+
+  // close icon
+  close->setIcon(QIcon(":/images/back.png"));
+  close->setObjectName("Transparent");
+  close->setCursor(Qt::PointingHandCursor);
+
+  // move close button to the right
+  this->layout->setAlignment(close, Qt::AlignLeft);
+
+  // set spacing
+  this->layout->addSpacing(20);
 
   // add pathPick
+  this->layout->addWidget(pathPickLabel);
   this->layout->addWidget(pathPick);
 
-  // add watchListLabel
-  this->layout->addWidget(watchListLabel);
-
   // add watchList
+  this->layout->addWidget(watchListLabel);
   this->layout->addWidget(watchList);
+
+  // alignment
+  this->layout->setAlignment(pathPickLabel, Qt::AlignTop);
+
+  // alignment
+  this->layout->insertStretch( -1, 1 );
+
+  // style
+  pathPickLabel->setObjectName("Heading");
+  watchListLabel->setObjectName("Heading");
 
   // connect folderListChanged signal
   connect(
-    watchList, &components::FolderList::folderListChanged,
-    this, &Settings::watchListChanged
+    watchList, &components::FolderList::onFolderAdded,
+    this, &Settings::onFolderAdded
+  );
+
+  // connect folderListChanged signal
+  connect(
+    watchList, &components::FolderList::onFolderRemoved,
+    this, &Settings::onFolderRemoved
   );
 
   // connect pathChanged signal
   connect(
     pathPick, &components::PathPick::pathChanged,
     this, &Settings::destinationPathChanged
+  );
+
+  // connect close button
+  connect(
+    close, &QPushButton::clicked,
+    this, &Settings::onCloseClicked
   );
 
   // set layout

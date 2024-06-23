@@ -49,9 +49,11 @@ void Storage::clearPaths() {
 void Storage::addPath(const QString& path) {
   this->settings->beginGroup(this->filesGroup);
   auto paths = this->settings->value(this->paths).toStringList();
+  if(paths.contains(path)) return;
   paths.append(path);
   this->settings->setValue(this->paths, paths);
   this->settings->endGroup();
+  emit onPathAdded(path);
 }
 
 /**
@@ -63,13 +65,26 @@ void Storage::removePath(const QString& path) {
   paths.removeAll(path);
   this->settings->setValue(this->paths, paths);
   this->settings->endGroup();
+  emit onPathRemoved(path);
 }
 
 /**
  * @brief Get the Download Path
  */
 QString Storage::getDownloadPath() {
-  return this->settings->value(this->downloadPath).toString();
+  if(this->settings->contains(this->downloadPath)) {
+    return this->settings->value(this->downloadPath).toString();
+  }
+
+  return constants::getDownloadPath();
+}
+
+/**
+ * @brief Set the Download Path
+ */
+void Storage::setDownloadPath(const QString& path) {
+  this->settings->setValue(this->downloadPath, path);
+  emit onDownloadPathChanged(path);
 }
 
 /**

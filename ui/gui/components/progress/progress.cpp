@@ -19,30 +19,32 @@ Progress::Progress(models::Transfer transfer, QWidget *parent)
   progressBar->setRange(0, 100);
   progressBar->setValue(0);
 
-  // create label
-  auto from    = new QLabel(transfer.getFrom(), this);
-  auto to      = new QLabel(transfer.getTo(), this);
+  // center align progress text in progress bar
+  progressBar->setAlignment(Qt::AlignCenter);
 
-  // set overflow to wrap
-  from->setWordWrap(true);
-  to->setWordWrap(true);
+  // create label
+  from    = new QLabel(transfer.getFrom(), this);
+  to      = new QLabel(transfer.getTo(), this);
 
   // create layout this shows copy from and copy to with progress bar
-  auto hlayout = new QHBoxLayout();
-  hlayout->addWidget(from);
-  hlayout->addWidget(new QLabel("to"));
-  hlayout->addWidget(to);
+  auto hLayout = new QHBoxLayout();
+  hLayout->addWidget(from);
+  hLayout->addWidget(new QLabel("to"));
+  hLayout->addWidget(to);
 
-  hlayout->setAlignment(Qt::AlignLeft);
-  hlayout->setSpacing(10);
+  hLayout->setAlignment(Qt::AlignLeft);
+  hLayout->setSpacing(5);
 
   // vertical layout
-  auto vlayout = new QVBoxLayout();
-  vlayout->addLayout(hlayout);
-  vlayout->addWidget(progressBar);
+  auto vLayout = new QVBoxLayout();
+  vLayout->addLayout(hLayout);
+  vLayout->addWidget(progressBar);
+
+  // add stretch
+  vLayout->addStretch();
 
   // set layout
-  setLayout(vlayout);
+  setLayout(vLayout);
 }
 
 /**
@@ -77,5 +79,38 @@ double Progress::getProgress() const {
  */
 models::Transfer Progress::getTransfer() const {
   return transfer;
+}
+
+/**
+ * @brief Paint event
+ */
+void Progress::paintEvent(QPaintEvent *event) {
+  auto fromText = transfer.getFrom();
+  QFontMetrics metrics(from->font());
+  QString elidedText = metrics.elidedText(
+    fromText, Qt::ElideRight, from->width()
+  );
+  from->setText(elidedText);
+
+  auto toText = transfer.getTo();
+  elidedText = metrics.elidedText(
+    toText, Qt::ElideRight, to->width()
+  );
+  to->setText(elidedText);
+
+  // set only minimal needed size
+  this->setMaximumHeight(
+    this->minimumSizeHint().height()
+  );
+
+  // For Style sheet
+  QStyleOption opt;
+  opt.initFrom(this);
+  QPainter p(this);
+  style()->drawPrimitive(
+    QStyle::PE_Widget, &opt, &p, this
+  );
+
+  QWidget::paintEvent(event);
 }
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::components

@@ -8,6 +8,8 @@
 #include <QStyleHints>
 #include <QSystemTrayIcon>
 #include <QMessageBox>
+#include <QFile>
+#include <QMenu>
 
 #include <csignal>
 
@@ -57,6 +59,7 @@ class PullDogApplication : public SingleApplication {
   ui::gui::window::PullDog *window;
   Controller *controller;
   QSystemTrayIcon *trayIcon;
+  QMenu *trayMenu;
 
  private:  // Disable Copy, Move and Assignment
 
@@ -71,10 +74,20 @@ class PullDogApplication : public SingleApplication {
    * @param argv argument vector
    */
   PullDogApplication(int &argc, char **argv) : SingleApplication(argc, argv) {
+    // Storage Instance
+    auto storage = &storage::Storage::instance();
+
     // create the objects of the class
-    controller = new Controller("D:\\Temp");
+    controller = new Controller();
     window     = new ui::gui::window::PullDog(controller);
     trayIcon   = new QSystemTrayIcon(this);
+    trayMenu   = new QMenu();
+
+    // set the menu items
+    trayMenu->addAction("Exit", [=]() { qApp->quit(); });
+
+    // set the tray menu
+    trayIcon->setContextMenu(trayMenu);
 
     // set the signal handler for all os
     signal(SIGTERM, [](int sig) { qApp->quit(); });
@@ -99,6 +112,16 @@ class PullDogApplication : public SingleApplication {
     // set minimum size
     window->setMinimumSize(constants::getAppMinSize());
 
+    // set destination root
+    controller->setDestinationRoot(storage->getDownloadPath());
+    window->setDestinationRoot(storage->getDownloadPath());
+
+    // set watch list
+    for (const auto &path : storage->getPaths()) {
+      controller->addWatchPath(path);
+      window->addWatchPath(path);
+    }
+
     // tray icon click from content
     QObject::connect(
       trayIcon, &QSystemTrayIcon::activated,
@@ -117,6 +140,68 @@ class PullDogApplication : public SingleApplication {
       this, &PullDogApplication::setQssFile
     );
 
+    using ui::gui::window::PullDog;
+
+    // set destination root signal to controller
+    connect(
+      window, &PullDog::destinationPathChanged,
+      storage, &storage::Storage::setDownloadPath
+    );
+
+    // storage to controller
+    connect(
+      storage, &storage::Storage::onDownloadPathChanged,
+      controller, &Controller::setDestinationRoot
+    );
+
+    // set watch list signal to controller
+    connect(
+      window, &PullDog::onFolderAdded,
+      storage, &storage::Storage::addPath
+    );
+
+    // get watch list signal from controller
+    connect(
+      storage, &storage::Storage::onPathAdded,
+      [=](const QString &path) { controller->addWatchPath(path); }
+    );
+
+    // remove watch list signal to controller
+    connect(
+      window, &PullDog::onFolderRemoved,
+      storage, &storage::Storage::removePath
+    );
+
+    // storage to controller
+    connect(
+      storage, &storage::Storage::onPathRemoved,
+      [=](const QString &path) { controller->removeWatchPath(path); }
+    );
+
+    // on copy start
+    connect(
+      controller, &Controller::onCopyStart,
+      window, &PullDog::addTransfer
+    );
+
+    // on copy end
+    connect(
+      controller, &Controller::onCopyEnd,
+      window, &PullDog::removeTransfer
+    );
+
+    // on progress changed
+    connect(
+      controller, &Controller::onCopy,
+      window, &PullDog::onProgressChanged
+    );
+
+    // on copy cancel
+    connect(
+      controller, &Controller::onCopyCancel,
+      window, &PullDog::removeTransfer
+    );
+
     // show tray icon
     trayIcon->show();
   }
@@ -128,6 +213,8 @@ class PullDogApplication : public SingleApplication {
   virtual ~PullDogApplication() {
     delete controller;
     delete window;
+    delete trayIcon;
+    delete trayMenu;
   }
 
   /**

@@ -25,7 +25,7 @@ class IWatch : public QObject {
   void fileUpdated(const QString &dir, const QString &file);
 
  signals:
-  void fileMoved(
+  void fileRename(
     const QString directory,
     const QString oldFile,
     const QString newFile

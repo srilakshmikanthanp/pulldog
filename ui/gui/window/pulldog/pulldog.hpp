@@ -40,10 +40,17 @@ class PullDog : public QWidget {
    */
   void destinationPathChanged(QString destRoot);
 
+ signals:
   /**
-   * @brief On Watch List Changed
+   * @brief signal to emit folder removed
    */
-  void watchListChanged(QStringList watchList);
+  void onFolderRemoved(const QString &path);
+
+ signals:
+  /**
+   * @brief signal to emit folder added
+   */
+  void onFolderAdded(const QString &path);
 
  public:
   /**
@@ -69,7 +76,12 @@ class PullDog : public QWidget {
   /**
    * @brief Set the Watch List
    */
-  void setWatchList(const QStringList &watchList);
+  void addWatchPath(const QString &path);
+
+  /**
+   * @brief Remove watch List
+   */
+  void removeWatchPath(const QString &path);
 
   /**
    * @brief Get the Watch List
@@ -85,5 +97,10 @@ class PullDog : public QWidget {
    * @brief Get the Destination Root
    */
   QString getDestinationRoot() const;
+
+  /**
+   * @brief On Progress Changed
+   */
+  void onProgressChanged(models::Transfer transfer, double progress);
 };
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::window
