@@ -13,9 +13,6 @@ TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
   // style
   titleLabel->setObjectName("Title");
 
-  // set the title
-  titleLabel->setText("Pulldog");
-
   // set the layout
   QHBoxLayout *layout = new QHBoxLayout();
   layout->addWidget(titleLabel);
@@ -33,7 +30,17 @@ TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
     this, &TitleBar::settingsClicked
   );
 
+  // set up language
+  this->setupLanguage();
+
   // set the layout
   this->setLayout(layout);
+}
+
+/**
+ * @brief set up Language
+ */
+void TitleBar::setupLanguage() {
+  titleLabel->setText(tr("Pulldog"));
 }
 }

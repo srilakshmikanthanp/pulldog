@@ -16,39 +16,39 @@ if (-not (Test-Path ./CMakeLists.txt)) {
   exit 1
 }
 
-#-------------------------- clipbird package --------------------------#
+#-------------------------- pulldog package --------------------------#
 
-# Buil the clipbird with release configuration
-Write-Host "Building clipbird with Release configuration" -ForegroundColor Green
+# Buil the pulldog with release configuration
+Write-Host "Building pulldog with Release configuration" -ForegroundColor Green
 cmake -G "Visual Studio 17 2022" -B ./build && cmake --build ./build --config Release
 
-# clipbird package data directory
-$ClipbirDir = "./.setup"
+# pulldog package data directory
+$Pulldog = "./.setup"
 
 # clean the package directory items except .gitignore
-Write-Host "Cleaning the package directory $ClipbirDir" -ForegroundColor Green
-Remove-Item -Recurse -Force $ClipbirDir/* -Exclude .gitignore
+Write-Host "Cleaning the package directory $Pulldog" -ForegroundColor Green
+Remove-Item -Recurse -Force $Pulldog/* -Exclude .gitignore
 
 # create conf directory in the package directory
-Write-Host "Creating conf directory in $ClipbirDir" -ForegroundColor Green
-New-Item -ItemType Directory -Force -Path $ClipbirDir/conf
+Write-Host "Creating conf directory in $Pulldog" -ForegroundColor Green
+New-Item -ItemType Directory -Force -Path $Pulldog/conf
 
 # copy the conf folder to the package directory
-Write-Host "Copying ./conf/* to $ClipbirDir" -ForegroundColor Green
-Copy-Item ./conf/* $ClipbirDir/conf
+Write-Host "Copying ./conf/* to $Pulldog" -ForegroundColor Green
+Copy-Item ./conf/* $Pulldog/conf
 
 # create assets directory in the package directory
-Write-Host "Creating assets directory in $ClipbirDir" -ForegroundColor Green
-New-Item -ItemType Directory -Force -Path $ClipbirDir/assets/images
+Write-Host "Creating assets directory in $Pulldog" -ForegroundColor Green
+New-Item -ItemType Directory -Force -Path $Pulldog/assets/images
 
 # copy the Image files to the package directory
-Write-Host "Copying ./assets/images/* to $ClipbirDir/assets/images" -ForegroundColor Green
-Copy-Item ./assets/images/* $ClipbirDir/assets/images
+Write-Host "Copying ./assets/images/* to $Pulldog/assets/images" -ForegroundColor Green
+Copy-Item ./assets/images/* $Pulldog/assets/images
 
 # Copy All Qt dlls to the package directory
 Write-Host "Creating the package as Release version" -ForegroundColor Green
-windeployqt ./build/Release/clipbird.exe --dir $ClipbirDir --release
+windeployqt ./build/Release/pulldog.exe --dir $Pulldog --release
 
-# copy the clipbird.exe to the package directory
-Write-Host "Copying ./build/Release/clipbird.exe to $ClipbirDir" -ForegroundColor Green
-Copy-Item ./build/Release/clipbird.exe $ClipbirDir
+# copy the pulldog.exe to the package directory
+Write-Host "Copying ./build/Release/pulldog.exe to $Pulldog" -ForegroundColor Green
+Copy-Item ./build/Release/pulldog.exe $Pulldog

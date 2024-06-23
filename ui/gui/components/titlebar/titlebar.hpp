@@ -47,5 +47,10 @@ class TitleBar : public QWidget {
    * @brief Destroy the TitleBar object
    */
   ~TitleBar() = default;
+
+  /**
+   * @brief set up Language
+   */
+  void setupLanguage();
 };
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::components
