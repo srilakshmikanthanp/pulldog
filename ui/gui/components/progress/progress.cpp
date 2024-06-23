@@ -106,7 +106,7 @@ void Progress::paintEvent(QPaintEvent *event) {
  */
 void Progress::resizeEvent(QResizeEvent *event) {
   auto fromText = transfer.getFrom();
-  auto width = (this->width() / 2) - 50;
+  auto width = (this->width() / 2) - 150;
 
   QFontMetrics metrics(from->font());
   QString elidedText = metrics.elidedText(
