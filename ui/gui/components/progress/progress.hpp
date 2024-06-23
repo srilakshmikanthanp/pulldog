@@ -71,5 +71,10 @@ class Progress : public QWidget {
    * @brief Paint event
    */
   void paintEvent(QPaintEvent *event) override;
+
+  /**
+   * @brief Resize event
+   */
+  void resizeEvent(QResizeEvent *event) override;
 };
 } // namespace srilakshmikanthanp::pulldog::ui::gui::components

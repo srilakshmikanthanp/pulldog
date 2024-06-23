@@ -13,7 +13,7 @@ namespace srilakshmikanthanp::pulldog::ui::gui::components {
  */
 PathPick::PathPick(QWidget *parent) : QWidget(parent) {
   // create layout
-  auto layout = new QHBoxLayout(this);
+  auto layout = new QHBoxLayout();
 
   // set up language
   this->setupLanguage();

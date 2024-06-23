@@ -25,8 +25,8 @@ class TitleBar : public QWidget {
 
  private:
 
-  QLabel *titleLabel = new QLabel(this);
-  QPushButton *settings  = new QPushButton(this);
+  QLabel *titleLabel = new QLabel();
+  QPushButton *settings  = new QPushButton();
 
  signals:
   /**

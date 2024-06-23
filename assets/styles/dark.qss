@@ -153,6 +153,11 @@ QProgressBar::chunk {
   border-radius: 5px;
 }
 
+QLabel#Title {
+  font-size: 25px;
+  font-weight: 700;
+}
+
 QLabel#Heading {
   font-size: 20px;
   font-weight: 700;

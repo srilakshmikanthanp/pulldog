@@ -8,14 +8,8 @@
 namespace srilakshmikanthanp::pulldog {
 void Controller::handleFileUpdate(const QString dir, const QString path) {
   // get the destination file path from the destination root
-  auto destFile = destinationRoot.filePath(path);
+  auto destFile = destinationRoot.filePath(QFileInfo(dir).fileName() + "/" + path);
   auto srcFile = QDir(dir).filePath(path);
-
-  // create all parent directories
-  if(!QDir().mkpath(QFileInfo(destFile).dir().path())) {
-    emit onError("Failed to create parent directories for " + destFile);
-    return;
-  }
 
   // Create a key for the pending file update
   auto key = models::Transfer(srcFile, destFile);
@@ -39,6 +33,15 @@ void Controller::copy(const models::Transfer &transfer) {
     auto copier = copingFiles[transfer];
     copier->cancel();
     copingFiles.remove(transfer);
+  }
+
+  auto srcFile = transfer.getFrom();
+  auto destFile = transfer.getTo();
+
+  // create all parent directories
+  if(!QDir().mkpath(QFileInfo(destFile).dir().path())) {
+    emit onError("Failed to create parent directories for " + destFile);
+    return;
   }
 
   // create a copier object

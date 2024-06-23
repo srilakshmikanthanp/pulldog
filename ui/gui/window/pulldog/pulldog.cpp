@@ -29,9 +29,6 @@ PullDog::PullDog(Controller *controller, QWidget *parent)
   // add the settings widget to the stacked widget
   stackedWidget->addWidget(settings);
 
-  // set the current index to 0
-  stackedWidget->setCurrentIndex(0);
-
   // create the final layout
   auto layout = new QVBoxLayout();
 

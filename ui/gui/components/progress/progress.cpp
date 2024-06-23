@@ -85,19 +85,6 @@ models::Transfer Progress::getTransfer() const {
  * @brief Paint event
  */
 void Progress::paintEvent(QPaintEvent *event) {
-  auto fromText = transfer.getFrom();
-  QFontMetrics metrics(from->font());
-  QString elidedText = metrics.elidedText(
-    fromText, Qt::ElideRight, from->width()
-  );
-  from->setText(elidedText);
-
-  auto toText = transfer.getTo();
-  elidedText = metrics.elidedText(
-    toText, Qt::ElideRight, to->width()
-  );
-  to->setText(elidedText);
-
   // set only minimal needed size
   this->setMaximumHeight(
     this->minimumSizeHint().height()
@@ -112,5 +99,25 @@ void Progress::paintEvent(QPaintEvent *event) {
   );
 
   QWidget::paintEvent(event);
+}
+
+/**
+ * @brief Resize event
+ */
+void Progress::resizeEvent(QResizeEvent *event) {
+  auto fromText = transfer.getFrom();
+  auto width = (this->width() / 2) - 50;
+
+  QFontMetrics metrics(from->font());
+  QString elidedText = metrics.elidedText(
+    fromText, Qt::ElideRight, width
+  );
+  from->setText(elidedText);
+
+  auto toText = transfer.getTo();
+  elidedText = metrics.elidedText(
+    toText, Qt::ElideRight, width
+  );
+  to->setText(elidedText);
 }
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::components

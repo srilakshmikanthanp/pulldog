@@ -80,7 +80,7 @@ class PullDogApplication : public SingleApplication {
     // create the objects of the class
     controller = new Controller();
     window     = new ui::gui::window::PullDog(controller);
-    trayIcon   = new QSystemTrayIcon(this);
+    trayIcon   = new QSystemTrayIcon();
     trayMenu   = new QMenu();
 
     // set the menu items
@@ -125,7 +125,7 @@ class PullDogApplication : public SingleApplication {
     // tray icon click from content
     QObject::connect(
       trayIcon, &QSystemTrayIcon::activated,
-      window, &ui::gui::window::PullDog::show
+      this, &PullDogApplication::onTrayIconClicked
     );
 
     // set the signal for instance Started
@@ -312,14 +312,20 @@ int main(int argc, char *argv[]) {
   // set not to quit on last content closed
   app.setQuitOnLastWindowClosed(false);
 
+  // event filter for the application
+  auto filter = new PullDogEventFilter();
+
   // set the event filter
-  app.installEventFilter(new PullDogEventFilter());
+  app.installEventFilter(filter);
 
   // Set the custom message handler
   qInstallMessageHandler(Logger::handler);
 
   // Set the global error handler
   std::set_terminate(globalErrorHandler);
+
+  // set parent for the filter
+  filter->setParent(&app);
 
   return app.exec();
 }

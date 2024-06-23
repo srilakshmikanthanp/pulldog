@@ -25,8 +25,8 @@ class PathPick : public QWidget {
   Q_OBJECT
 
  private:
-  QPushButton *button = new QPushButton(this);
-  QLabel *label = new QLabel(this);
+  QPushButton *button = new QPushButton();
+  QLabel *label = new QLabel();
 
  private:
   QString path;

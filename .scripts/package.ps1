@@ -49,6 +49,10 @@ Copy-Item ./assets/images/* $Pulldog/assets/images
 Write-Host "Creating the package as Release version" -ForegroundColor Green
 windeployqt ./build/Release/pulldog.exe --dir $Pulldog --release
 
+# copy All vc dlls to the package directory
+Write-Host "Copying all vc dlls to $Pulldog" -ForegroundColor Green
+Copy-Item $env:VC_DLLS_DIR/* $Pulldog -Recurse
+
 # copy the pulldog.exe to the package directory
 Write-Host "Copying ./build/Release/pulldog.exe to $Pulldog" -ForegroundColor Green
 Copy-Item ./build/Release/pulldog.exe $Pulldog

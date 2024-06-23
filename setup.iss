@@ -4,7 +4,7 @@
 #define PulldogPublisher "srilakshmikanthanp"
 #define PulldogName "pulldog"
 #define PulldogVersion "1.0.0"
-#define PulldogUUID "3A8D9FCA-9F95-4947-8AB0-3E364ED765E1"
+#define PulldogUUID "f4b84e82-54df-47fc-8a90-05fd21f42dd1"
 #define PulldogURL "https://github.com/srilakshmikanthanp/pulldog"
 #define PulldogExeName "pulldog.exe"
 
@@ -28,15 +28,7 @@ SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#PulldogExeName}
 UsePreviousLanguage=no
-
-[Registry]
-; To start app on windows startup
-Root      : HKLM;                                             \
-Subkey    : "Software\Microsoft\Windows\CurrentVersion\Run";  \
-ValueType : string;                                           \
-ValueName : "{#PulldogName}";                                \
-ValueData : """{app}\{#PulldogExeName}""";                   \
-Flags     : uninsdeletevalue
+PrivilegesRequired=lowest
 
 [Files]
 ; List of files to be included in the installer
@@ -62,16 +54,15 @@ Name      : "{autodesktop}\{#PulldogName}"; \
 Filename  : "{app}\{#PulldogExeName}";      \
 Tasks     : desktopicon
 
+Name: "{userstartup}\{#PulldogName}"; \
+Filename: "{app}\PulldogExeName.exe";  \
+WorkingDir: "{app}"
+
 ; Start Menu Icon
 Name      : "{autoprograms}\{#PulldogName}"; \
 Filename  : "{app}\{#PulldogExeName}"
 
 [Run]
-; Install VC++ Redistributables
-Filename    : {app}\vc_redist.x64.exe;              \
-Parameters  : "/q /norestart";                      \
-StatusMsg   : "Installing VC++ Redistributables..."
-
 ; Start the application after installation
 Filename    : "{app}\{#PulldogExeName}";                                    \
 Description : "{cm:LaunchProgram,{#StringChange(PulldogName, '&', '&&')}}"; \
