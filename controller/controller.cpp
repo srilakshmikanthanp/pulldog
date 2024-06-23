@@ -106,6 +106,11 @@ void Controller::processPendingFileUpdate() {
   // get the current time
   auto currentTime = QDateTime::currentMSecsSinceEpoch();
 
+  // check the concurrent copies
+  if(copingFiles.size() >= concurrentCopies) {
+    return;
+  }
+
   // iterate the pending file update
   for(auto pending: pendingFiles.keys()) {
     // get the last update time

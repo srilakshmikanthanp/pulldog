@@ -41,7 +41,8 @@ class Controller : public QObject {
   QTimer timer;
 
  private:
-  long long threshold = 10000;
+  long long threshold = 5000;
+  int concurrentCopies = 20;
 
  private:  // Just for qt
   Q_OBJECT
@@ -118,6 +119,16 @@ class Controller : public QObject {
    * @brief Set threshold
    */
   void setThreshold(long long threshold);
+
+  /**
+   * @brief Get the Concurrent Copies
+   */
+  int getConcurrentCopies() const;
+
+  /**
+   * @brief Set the Concurrent Copies
+   */
+  void setConcurrentCopies(int concurrentCopies);
 
   /**
    * @brief Get the Paths object
