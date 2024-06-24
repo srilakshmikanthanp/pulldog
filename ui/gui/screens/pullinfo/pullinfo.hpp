@@ -28,12 +28,15 @@ class PullInfo : public QWidget {
 
  private:
 
-  QLabel *noProgress = new QLabel("No Transfer in Progress");
+  QStackedLayout *stackLayout = new QStackedLayout(this);
   QScrollArea *scrollArea = new QScrollArea();
   QWidget *scrollAreaWidget = new QWidget();
+  QLabel *noProgress = new QLabel();
   QVBoxLayout *scrollAreaLayout = new QVBoxLayout();
-  QStackedLayout *stackLayout = new QStackedLayout();
   QList<components::Progress *> progressList;
+
+ private:
+  void setUpLanguage();
 
  public:
 

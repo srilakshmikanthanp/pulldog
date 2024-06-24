@@ -30,8 +30,8 @@ PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
   // align top
   scrollAreaLayout->setAlignment(Qt::AlignTop);
 
-  // set the layout
-  this->setLayout(this->stackLayout);
+  // set the language
+  this->setUpLanguage();
 }
 
 /**
@@ -42,6 +42,10 @@ PullInfo::~PullInfo() {
   for (auto progress: this->progressList) {
     delete progress;
   }
+}
+
+void PullInfo::setUpLanguage() {
+  this->noProgress->setText(tr("All Transfers are Completed"));
 }
 
 /**
