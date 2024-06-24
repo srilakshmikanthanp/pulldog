@@ -276,6 +276,7 @@ int main(int argc, char *argv[]) {
   using srilakshmikanthanp::pulldog::constants::getAppVersion;
   using srilakshmikanthanp::pulldog::PullDogApplication;
   using srilakshmikanthanp::pulldog::PullDogEventFilter;
+  using srilakshmikanthanp::pulldog::Controller;
   using srilakshmikanthanp::pulldog::logging::Logger;
 
   PullDogApplication app(argc, argv);
@@ -308,6 +309,15 @@ int main(int argc, char *argv[]) {
     QMessageBox::critical(nullptr, "Error", "Can't Create App Home");
     return EXIT_FAILURE;
   }
+
+  // get controller
+  auto controller = app.getController();
+
+  // controller on error signal to log
+  QObject::connect(
+    controller, &Controller::onError,
+    [](const QString &error) { qCritical() << error; }
+  );
 
   // set not to quit on last content closed
   app.setQuitOnLastWindowClosed(false);

@@ -36,6 +36,27 @@ QString Watch::getFileNameFromHandle(HANDLE handle) const {
   return utility::getFileNameFromHandle(handle);
 }
 
+// call ReadDirectoryChangesW
+bool Watch::readDirectoryChanges(DirWatch *dir) {
+  // Issue another call to ReadDirectoryChangesW to continue monitoring
+  if (!ReadDirectoryChangesW(
+    dir->handle,
+    dir->buffer,
+    sizeof(dir->buffer),
+    dir->recursive,
+    FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
+    FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
+    FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_LAST_ACCESS |
+    FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
+    NULL,
+    &dir->overlapped,
+    Watch::DirectoryChangesCallback)) {
+    return false;
+  }
+
+  return true;
+}
+
 void CALLBACK Watch::DirectoryChangesCallback(
   DWORD errorCode,
   DWORD numberOfBytesTransferred,
@@ -43,15 +64,6 @@ void CALLBACK Watch::DirectoryChangesCallback(
 ) {
   // Get the instance of the class
   auto watcher = reinterpret_cast<Watch*>(overlapped->hEvent);
-
-  if (errorCode != ERROR_SUCCESS) {
-    watcher->onError(QString("Error in ReadDirectoryChangesW callback: %1").arg(errorCode));
-    return;
-  }
-
-  if (numberOfBytesTransferred == 0) {
-    return;
-  }
 
   // Identify the directory watch instance
   DirWatch *directory = nullptr;
@@ -65,6 +77,25 @@ void CALLBACK Watch::DirectoryChangesCallback(
 
   if (directory == nullptr) {
     watcher->onError("DirectoryWatch instance not found.");
+    return;
+  }
+
+  // Defer the re-issuing of ReadDirectoryChangesW
+  DEFER([=]() {
+    if (!watcher->readDirectoryChanges(directory)) {
+      watcher->onError(QString("Error in re-issuing ReadDirectoryChangesW: %1").arg(GetLastError()));
+      watcher->directories.removeOne(directory);
+      CloseHandle(directory->handle);
+      emit watcher->pathsChanged(directory->baseDir, false);
+    }
+  });
+
+  if (errorCode != ERROR_SUCCESS) {
+    watcher->onError(QString("Error in ReadDirectoryChangesW callback: %1").arg(errorCode));
+    return;
+  }
+
+  if (numberOfBytesTransferred == 0) {
     return;
   }
 
@@ -86,25 +117,6 @@ void CALLBACK Watch::DirectoryChangesCallback(
 
     // Move to the next entry
     base += fileInfo->NextEntryOffset;
-  }
-
-  // Issue another call to ReadDirectoryChangesW to continue monitoring
-  if (!ReadDirectoryChangesW(
-    directory->handle,
-    directory->buffer,
-    sizeof(directory->buffer),
-    directory->recursive,
-    FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
-    FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
-    FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_LAST_ACCESS |
-    FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
-    NULL,
-    &directory->overlapped,
-    Watch::DirectoryChangesCallback)) {
-    watcher->onError(QString("Error in re-issuing ReadDirectoryChangesW: %1").arg(GetLastError()));
-    CloseHandle(directory->handle);
-    watcher->directories.removeOne(directory);
-    emit watcher->pathsChanged(directory->baseDir, false);
   }
 }
 
@@ -170,20 +182,10 @@ void Watch::addPath(const QString &path, bool recursive) {
   directory->watcher = this;
   directory->recursive = recursive;
 
-  if (!ReadDirectoryChangesW(
-    directory->handle,
-    directory->buffer,
-    sizeof(directory->buffer),
-    directory->recursive,  // Monitor the directory tree
-    FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME |
-    FILE_NOTIFY_CHANGE_ATTRIBUTES | FILE_NOTIFY_CHANGE_SIZE |
-    FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_LAST_ACCESS |
-    FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
-    NULL,
-    &directory->overlapped,
-    Watch::DirectoryChangesCallback)) {
+  if (!readDirectoryChanges(directory)) {
     onError(QString("Error in ReadDirectoryChangesW: %1").arg(GetLastError()));
     CloseHandle(directory->handle);
+    emit pathsChanged(path, false);
     return;
   }
 

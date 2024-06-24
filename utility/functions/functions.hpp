@@ -23,7 +23,7 @@
 #include <QString>
 #include <stdexcept>
 
-namespace srilakshmikanthanp::utility {
+namespace srilakshmikanthanp::pulldog::utility {
 /**
  * @brief get the file name from the handle
  *

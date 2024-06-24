@@ -6,29 +6,10 @@
 #include "controller.hpp"
 
 namespace srilakshmikanthanp::pulldog {
-void Controller::handleFileUpdate(const QString dir, const QString path) {
-  // get the destination file path from the destination root
-  auto destFile = destinationRoot.filePath(QFileInfo(dir).fileName() + "/" + path);
-  auto srcFile = QDir(dir).filePath(path);
-
-  // Create a key for the pending file update
-  auto key = models::Transfer(srcFile, destFile);
-
-  // Add or update the pending file update
-  pendingFiles[key] = QDateTime::currentMSecsSinceEpoch();
-}
-
-void Controller::handleFileRename(
-  const QString directory,
-  const QString oldFile,
-  const QString newFile) {
-  this->handleFileUpdate(directory, newFile);
-}
-
 /**
  * @brief start to Copy the file with copier object
  */
-void Controller::copy(const models::Transfer &transfer) {
+void FileProcessor::copy(const models::Transfer &transfer) {
   if(copingFiles.contains(transfer)) {
     auto copier = copingFiles[transfer];
     copier->cancel();
@@ -50,27 +31,27 @@ void Controller::copy(const models::Transfer &transfer) {
   // connect the signals
   connect(
     copier, &common::Copier::onCopyStart,
-    this, &Controller::onCopyStart
+    this, &FileProcessor::onCopyStart
   );
 
   connect(
     copier, &common::Copier::onCopy,
-    this, &Controller::onCopy
+    this, &FileProcessor::onCopy
   );
 
   connect(
     copier, &common::Copier::onCopyEnd,
-    this, &Controller::onCopyEnd
+    this, &FileProcessor::onCopyEnd
   );
 
   connect(
     copier, &common::Copier::onCopyCancel,
-    this, &Controller::onCopyCancel
+    this, &FileProcessor::onCopyCancel
   );
 
   connect(
     copier, &common::Copier::onError,
-    this, &Controller::onError
+    this, &FileProcessor::onError
   );
 
   // for delete the copier object
@@ -102,11 +83,11 @@ void Controller::copy(const models::Transfer &transfer) {
 /**
  * @brief Process the pending file update
  */
-void Controller::processPendingFileUpdate() {
+void FileProcessor::processPendingFileUpdate() {
   // get the current time
   auto currentTime = QDateTime::currentMSecsSinceEpoch();
 
-  // check the concurrent copies
+  // if concurrent copies is full, return
   if(copingFiles.size() >= concurrentCopies) {
     return;
   }
@@ -130,8 +111,17 @@ void Controller::processPendingFileUpdate() {
     // create an locker object
     common::Locker locker(srcFile, types::LockMode::READ);
 
-    // try to lock the file
-    if(locker.tryLock() < 0) {
+    // lock
+    auto status = locker.tryLock();
+
+    // if it is recoverable, continue
+    if(status == common::ILocker::Error::UNRECOVERABLE) {
+      emit onError("Failed to lock the file " + srcFile);
+      continue;
+    }
+
+    // if it is recoverable, continue
+    if(status == common::ILocker::Error::RECOVERABLE) {
       continue;
     }
 
@@ -146,10 +136,126 @@ void Controller::processPendingFileUpdate() {
   }
 }
 
+FileProcessor::FileProcessor(QObject *parent) : QObject(parent) {
+  // connect the timer
+  connect(
+    &timer, &QTimer::timeout, this, &FileProcessor::processPendingFileUpdate
+  );
+
+  // start the timer
+  timer.start(threshold / 2);
+}
+
+/**
+ * @brief slot to handle file update
+ */
+void FileProcessor::handleFileUpdate(models::Transfer transfer) {
+  pendingFiles[transfer] = QDateTime::currentMSecsSinceEpoch();
+}
+
+/**
+ * @brief Get threshold
+ */
+long long FileProcessor::getThreshold() const {
+  return threshold;
+}
+
+/**
+ * @brief Set threshold
+ */
+void FileProcessor::setThreshold(long long threshold) {
+  timer.setInterval((this->threshold = threshold) / 2);
+}
+
+/**
+ * @brief Get the Concurrent Copies
+ */
+int FileProcessor::getConcurrentCopies() const {
+  return concurrentCopies;
+}
+
+/**
+ * @brief Set the Concurrent Copies
+ */
+void FileProcessor::setConcurrentCopies(int concurrentCopies) {
+  this->concurrentCopies = concurrentCopies;
+}
+
+// ------------------------------------------------------------------------------------
+
+/**
+ * @brief slot to handle file update
+ */
+void Controller::handleFileUpdate(const QString dir, const QString path) {
+  // get the destination file path from the destination root
+  auto destFile = destinationRoot.filePath(QFileInfo(dir).fileName() + "/" + path);
+  auto srcFile = QDir(dir).filePath(path);
+
+  // ignore if it is not exists
+  if(!QFileInfo(srcFile).exists()) {
+    return;
+  }
+
+  // if it is a directory, return
+  if(QFileInfo(srcFile).isDir()) {
+    return;
+  }
+
+  // Create a key for the pending file update
+  auto key = models::Transfer(srcFile, destFile);
+
+  // call the file processor on that thread
+  QMetaObject::invokeMethod(
+    &fileProcessor, [=] { this->fileProcessor.handleFileUpdate(key); }
+  );
+}
+
+/**
+ * @brief Handle the file rename
+ */
+void Controller::handleFileRename(
+  const QString directory,
+  const QString oldFile,
+  const QString newFile
+) {
+  this->handleFileUpdate(directory, newFile);
+}
+
 /**
  * @brief Construct a new Controller object
  */
 Controller::Controller(QObject *parent) : QObject(parent) {
+  connect(
+    &fileProcessor, &FileProcessor::onCopyStart,
+    this, &Controller::onCopyStart
+  );
+
+  connect(
+    &fileProcessor, &FileProcessor::onCopy,
+    this, &Controller::onCopy
+  );
+
+  connect(
+    &fileProcessor, &FileProcessor::onCopyEnd,
+    this, &Controller::onCopyEnd
+  );
+
+  connect(
+    &fileProcessor, &FileProcessor::onCopyCancel,
+    this, &Controller::onCopyCancel
+  );
+
+  connect(
+    &fileProcessor, &FileProcessor::onError,
+    this, &Controller::onError
+  );
+
+  // move the file processor to the thread
+  fileProcessor.moveToThread(&fileProcessorThread);
+
+  // start the file processor thread
+  fileProcessorThread.start();
+
   // connect the signals
   connect(
     &watcher, &common::Watch::fileCreated,
@@ -171,14 +277,10 @@ Controller::Controller(QObject *parent) : QObject(parent) {
     this, &Controller::pathsChanged
   );
 
-  // connect the timer
   connect(
-    &timer, &QTimer::timeout,
-    this, &Controller::processPendingFileUpdate
+    &watcher, &common::Watch::onError,
+    this, &Controller::onError
   );
-
-  // start the timer
-  timer.start(threshold / 2);
 }
 
 /**
@@ -199,14 +301,28 @@ void Controller::setDestinationRoot(const QString &path) {
  * @brief Get threshold
  */
 long long Controller::getThreshold() const {
-  return threshold;
+  return fileProcessor.getThreshold();
 }
 
 /**
  * @brief Set threshold
  */
 void Controller::setThreshold(long long threshold) {
-  threshold = threshold;
+  fileProcessor.setThreshold(threshold);
+}
+
+/**
+ * @brief Get the Concurrent Copies
+ */
+int Controller::getConcurrentCopies() const {
+  return fileProcessor.getConcurrentCopies();
+}
+
+/**
+ * @brief Set the Concurrent Copies
+ */
+void Controller::setConcurrentCopies(int concurrentCopies) {
+  fileProcessor.setConcurrentCopies(concurrentCopies);
 }
 
 /**

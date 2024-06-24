@@ -39,7 +39,7 @@ int Locker::tryLock() {
     shareMode,
     NULL,
     openMode,
-    FILE_ATTRIBUTE_NORMAL,
+    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS,
     NULL
   );
 
@@ -51,11 +51,10 @@ int Locker::tryLock() {
     case ERROR_SHARING_VIOLATION:
     case ERROR_ALREADY_EXISTS:
     case ERROR_FILE_EXISTS:
-      return -2;
+      return Error::RECOVERABLE;
     case ERROR_ACCESS_DENIED:
-      return -1;
     default:
-      return -1;
+      return Error::UNRECOVERABLE;
   }
 }
 
@@ -65,7 +64,7 @@ int Locker::tryLock() {
 int Locker::lock(MSec timeout) {
   // if file not exists, return error
   if (!QFile::exists(file) && mode == types::LockMode::READ) {
-    return -1;
+    return Error::UNRECOVERABLE;
   }
 
   // remaining time
@@ -75,7 +74,7 @@ int Locker::lock(MSec timeout) {
   while(!timer.hasExpired()) {
     auto result = this->tryLock();
 
-    if(result == -1 || result != -2) {
+    if(result != Error::RECOVERABLE) {
       return result;
     }
 

@@ -5,7 +5,7 @@
 
 #include "functions.hpp"
 
-namespace srilakshmikanthanp::utility {
+namespace srilakshmikanthanp::pulldog::utility {
 #ifdef _WIN32
 QString getFileNameFromHandle(HANDLE hFile) {
   auto buffer = std::make_unique<WCHAR[]>(MAX_PATH);

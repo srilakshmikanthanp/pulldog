@@ -23,6 +23,12 @@ class ILocker : public QObject {
   using MSec = std::chrono::milliseconds;
 
  public:
+  enum Error {
+    RECOVERABLE = -1,
+    UNRECOVERABLE = -2
+  };
+
+ public:
   /**
    * @brief Construct a new ILocker object
    */

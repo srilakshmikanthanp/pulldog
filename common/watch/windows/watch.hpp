@@ -17,6 +17,7 @@
 #undef NOMINMAX
 
 #include "common/watch/iwatch.hpp"
+#include "utility/deferred/deferred.hpp"
 #include "utility/functions/functions.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
@@ -32,7 +33,7 @@ class Watch : public IWatch {
     HANDLE handle;
     QString oldFileName;
     bool recursive;
-    alignas(4) uint8_t buffer[1024];
+    alignas(4) uint8_t buffer[64000];
     Watch* watcher;
   };
 
@@ -42,6 +43,9 @@ class Watch : public IWatch {
 
   // get the file name from the handle
   QString getFileNameFromHandle(HANDLE handle) const;
+
+  // call ReadDirectoryChangesW
+  bool readDirectoryChanges(DirWatch *dir);
 
  private:
   // callback function for ReadDirectoryChangesW
