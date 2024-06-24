@@ -14,6 +14,9 @@ PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
   scrollArea->setWidgetResizable(true);
   scrollArea->setWidget(this->scrollAreaWidget);
 
+  // disable horizontal scrolling
+  scrollArea->horizontalScrollBar()->setEnabled(false);
+
   // set the layout for the scroll area
   this->scrollAreaWidget->setLayout(this->scrollAreaLayout);
 

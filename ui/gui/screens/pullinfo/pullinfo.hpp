@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QWidget>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QStackedLayout>
 
 #include "ui/gui/components/progress/progress.hpp"
