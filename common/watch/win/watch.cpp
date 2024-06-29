@@ -6,38 +6,37 @@
 #include "watch.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
-void Watch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
-  auto fileName = QString::fromWCharArray(
-    fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR)
-  );
+void WinWatch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
+  auto fileName = QString::fromWCharArray(fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR));
+  auto relativePath = QDir::cleanPath(dir->baseDir + "/" + fileName);
 
   switch (fileInfo->Action) {
     case FILE_ACTION_MODIFIED:
-      emit fileUpdated(dir->baseDir, fileName);
+      emit fileUpdated(dir->baseDir, relativePath);
       break;
     case FILE_ACTION_ADDED:
-      emit fileCreated(dir->baseDir, fileName);
+      emit fileCreated(dir->baseDir, relativePath);
       break;
     case FILE_ACTION_RENAMED_OLD_NAME:
-      dir->oldFileName = fileName;
+      dir->oldFileName = relativePath;
       break;
     case FILE_ACTION_RENAMED_NEW_NAME:
-      emit fileRename(dir->baseDir, dir->oldFileName, fileName);
+      emit fileRename(dir->baseDir, dir->oldFileName, relativePath);
       break;
     case FILE_ACTION_REMOVED:
-      emit fileRemoved(dir->baseDir, fileName);
+      emit fileRemoved(dir->baseDir, relativePath);
       break;
     default:
       break;
   }
 }
 
-QString Watch::getFileNameFromHandle(HANDLE handle) const {
+QString WinWatch::getFileNameFromHandle(HANDLE handle) const {
   return utility::getFileNameFromHandle(handle);
 }
 
 // call ReadDirectoryChangesW
-bool Watch::readDirectoryChanges(DirWatch *dir) {
+bool WinWatch::readDirectoryChanges(DirWatch *dir) {
   // Issue another call to ReadDirectoryChangesW to continue monitoring
   if (!ReadDirectoryChangesW(
     dir->handle,
@@ -50,20 +49,20 @@ bool Watch::readDirectoryChanges(DirWatch *dir) {
     FILE_NOTIFY_CHANGE_CREATION | FILE_NOTIFY_CHANGE_SECURITY,
     NULL,
     &dir->overlapped,
-    Watch::DirectoryChangesCallback)) {
+    WinWatch::DirectoryChangesCallback)) {
     return false;
   }
 
   return true;
 }
 
-void CALLBACK Watch::DirectoryChangesCallback(
+void CALLBACK WinWatch::DirectoryChangesCallback(
   DWORD errorCode,
   DWORD numberOfBytesTransferred,
   LPOVERLAPPED overlapped
 ) {
   // Get the instance of the class
-  auto watcher = reinterpret_cast<Watch*>(overlapped->hEvent);
+  auto watcher = reinterpret_cast<WinWatch*>(overlapped->hEvent);
 
   // Identify the directory watch instance
   DirWatch *directory = nullptr;
@@ -125,14 +124,14 @@ void CALLBACK Watch::DirectoryChangesCallback(
  *
  * @param parent
  */
-Watch::Watch(QObject *parent) : IWatch(parent) {
+WinWatch::WinWatch(QObject *parent) : IWatch(parent) {
   // do nothing
 }
 
 /**
  * @brief Destroy the Watcher:: Watcher object
  */
-Watch::~Watch() {
+WinWatch::~WinWatch() {
   for (auto& directory : this->directories) {
     CloseHandle(directory->handle);
   }
@@ -143,7 +142,7 @@ Watch::~Watch() {
  *
  * @return QStringList
  */
-QStringList Watch::paths() const {
+QStringList WinWatch::paths() const {
   auto paths = QStringList();
 
   for(auto handle: this->directories) {
@@ -158,8 +157,8 @@ QStringList Watch::paths() const {
  *
  * @param path
  */
-void Watch::addPath(const QString &path, bool recursive) {
-  Watch::DirWatch *directory = new Watch::DirWatch();
+void WinWatch::addPath(const QString &path, bool recursive) {
+  WinWatch::DirWatch *directory = new WinWatch::DirWatch();
 
   directory->handle = CreateFileW(
     path.toStdWString().c_str(),
@@ -199,7 +198,7 @@ void Watch::addPath(const QString &path, bool recursive) {
  *
  * @param path
  */
-void Watch::removePath(const QString &path) {
+void WinWatch::removePath(const QString &path) {
   for (auto dir: directories) {
     if (this->getFileNameFromHandle(dir->handle) == path) {
       CloseHandle(dir->handle);

@@ -25,49 +25,45 @@
 
 namespace srilakshmikanthanp::pulldog::common {
 /**
- * Forward declaration
+ * @brief A Class that copies a file from one location to another
+ * with a progress signal
  */
-class Copier;
-
-/**
- * @brief Private class for Copier
- */
-class CopierPrivate : public QObject {
+class Copier : public ICopier {
  private:
 
-  Q_DISABLE_COPY(CopierPrivate)
+  Q_DISABLE_COPY(Copier)
 
  private:  // Just for qt
 
   Q_OBJECT
 
  private:
-  std::atomic<bool> isCompleted = false;
+  std::atomic<bool> jobDone = false;
   const models::Transfer transfer;
   BOOL cancelFlag = false;
-  common::Copier *copier;
   QMutex mutex;
 
  public:
+
   /**
    * @brief Construct a new Copier object
    */
-  CopierPrivate(models::Transfer transfer, common::Copier *copier);
+  Copier(models::Transfer transfer, QObject *parent = nullptr);
 
   /**
    * @brief Destroy the Copier object
    */
-  ~CopierPrivate() = default;
+  ~Copier() = default;
 
   /**
-   * Start
+   * @brief start
    */
-  void start();
+  void start() override;
 
   /**
    * @brief Cancel the copy
    */
-  void cancel();
+  void cancel() override;
 
  private:
   /**
@@ -84,45 +80,5 @@ class CopierPrivate : public QObject {
     HANDLE hDestinationFile,
     LPVOID lpData
   );
-};
-
-/**
- * @brief A Class that copies a file from one location to another
- * with a progress signal
- */
-class Copier : public ICopier {
- private:
-
-  Q_DISABLE_COPY(Copier)
-
- private:  // Just for qt
-
-  Q_OBJECT
-
- private:
-  CopierPrivate privateInstance;
-  QThread thread;
-
- public:
-
-  /**
-   * @brief Construct a new Copier object
-   */
-  Copier(models::Transfer transfer, QObject *parent = nullptr);
-
-  /**
-   * @brief Destroy the Copier object
-   */
-  ~Copier();
-
-  /**
-   * @brief start
-   */
-  void start() override;
-
-  /**
-   * @brief Cancel the copy
-   */
-  void cancel() override;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::copier

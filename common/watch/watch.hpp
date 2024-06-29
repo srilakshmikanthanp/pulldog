@@ -5,6 +5,9 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#ifdef _WIN32
-#include "windows/watch.hpp"
-#endif
+
+#include "common/watch/generic/watch.hpp"
+
+namespace srilakshmikanthanp::pulldog::common {
+using Watch = GenericWatch;
+} // namespace srilakshmikanthanp::pulldog::common

@@ -24,7 +24,7 @@ namespace srilakshmikanthanp::pulldog::common {
 /**
  * @brief Currently a wrapper around QFileSystemWatcher
  */
-class Watch : public IWatch {
+class WinWatch : public IWatch {
  private:
   // structure to hold the directory Info
   struct DirWatch {
@@ -34,7 +34,7 @@ class Watch : public IWatch {
     QString oldFileName;
     bool recursive;
     alignas(4) uint8_t buffer[64000];
-    Watch* watcher;
+    WinWatch* watcher;
   };
 
  private:
@@ -63,12 +63,12 @@ class Watch : public IWatch {
   /**
    * @brief Construct a new IWatch object
    */
-  Watch(QObject *parent = nullptr);
+  WinWatch(QObject *parent = nullptr);
 
   /**
    * @brief Destroy the IWatch object
    */
-  ~Watch();
+  ~WinWatch();
 
   /**
    * @brief Remove a path from watch

@@ -7,5 +7,5 @@
 
 
 #ifdef _WIN32
-#include "windows/locker.hpp"
+#include "win/locker.hpp"
 #endif
