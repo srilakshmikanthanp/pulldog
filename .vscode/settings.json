@@ -164,6 +164,7 @@
         "qlocalsocket": "cpp",
         "qthread": "cpp",
         "qstackedwidget": "cpp",
-        "qprogressbar": "cpp"
+        "qprogressbar": "cpp",
+        "qfiledialog": "cpp"
     }
 }

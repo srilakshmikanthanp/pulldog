@@ -38,7 +38,6 @@ PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
  * @brief Destructor for PullInfo
  */
 PullInfo::~PullInfo() {
-  // delete all the progress
   for (auto progress: this->progressList) {
     delete progress;
   }
@@ -63,8 +62,8 @@ void PullInfo::removeProgress(components::Progress *progress) {
   // delete the progress
   progress->deleteLater();
 
-  // repaint
-  this->repaint();
+  // up date the scroll area
+  this->update();
 }
 
 /**
@@ -79,8 +78,8 @@ void PullInfo::addProgress(components::Progress *progress) {
   // add the progress to the list
   this->progressList.append(progress);
 
-  // repaint
-  this->repaint();
+  // up date the scroll area
+  this->update();
 }
 
 /**

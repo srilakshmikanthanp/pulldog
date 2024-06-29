@@ -14,69 +14,9 @@
 #include <QWidget>
 #include <QGraphicsDropShadowEffect>
 
+#include "ui/gui/components/foldertile/foldertile.hpp"
+
 namespace srilakshmikanthanp::pulldog::ui::gui::components {
-/**
- * @brief Watch Tile component is a tile to watch a directory
- */
-class FolderTile : public QWidget {
- private:
-
-  Q_DISABLE_COPY(FolderTile)
-
- private:
-
-  Q_OBJECT
-
- private:
-
-  QLabel *label             = new QLabel();
-  QPushButton *removeButton = new QPushButton();
-
- private:
-
-  QString path;
-
- private:
-
-  /**
-   * @brief Set up the language
-   */
-  void setupLanguage();
-
-  /**
-   * @brief on remove button clicked
-   */
-  void onRemove();
-
- signals:
-  /**
-   * @brief signal to emit when the watch tile is removed
-   */
-  void removeWatchTile(QString path);
-
- public:
-
-  /**
-   * @brief Construct a new Watch Tile object
-   *
-   * @param path
-   * @param parent
-   */
-  FolderTile(const QString &path, QWidget *parent = nullptr);
-
-  /**
-   * @brief Destroy the Watch Tile object
-   */
-  ~FolderTile() = default;
-
-  /**
-   * @brief get the path
-   *
-   * @return QString
-   */
-  QString getPath() const;
-};
-
 /**
  * @brief FolderList component is a list of directories to watch
  * for changes

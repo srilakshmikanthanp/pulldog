@@ -8,23 +8,25 @@
 namespace srilakshmikanthanp::pulldog::common {
 void WinWatch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
   auto fileName = QString::fromWCharArray(fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR));
-  auto relativePath = QDir::cleanPath(dir->baseDir + "/" + fileName);
+  auto filePath = QDir::cleanPath(dir->baseDir + "/" + fileName);
+  auto relative = std::filesystem::relative(filePath.toStdString(), dir->baseDir.toStdString());
+  auto relQtStr = QString::fromStdString(relative.string());
 
   switch (fileInfo->Action) {
     case FILE_ACTION_MODIFIED:
-      emit fileUpdated(dir->baseDir, relativePath);
+      emit fileUpdated(dir->baseDir, relQtStr);
       break;
     case FILE_ACTION_ADDED:
-      emit fileCreated(dir->baseDir, relativePath);
+      emit fileCreated(dir->baseDir, relQtStr);
       break;
     case FILE_ACTION_RENAMED_OLD_NAME:
-      dir->oldFileName = relativePath;
+      dir->oldFileName = relQtStr;
       break;
     case FILE_ACTION_RENAMED_NEW_NAME:
-      emit fileRename(dir->baseDir, dir->oldFileName, relativePath);
+      emit fileRename(dir->baseDir, dir->oldFileName, relQtStr);
       break;
     case FILE_ACTION_REMOVED:
-      emit fileRemoved(dir->baseDir, relativePath);
+      emit fileRemoved(dir->baseDir, relQtStr);
       break;
     default:
       break;

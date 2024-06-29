@@ -85,60 +85,52 @@ void Worker::copy(const models::Transfer &transfer) {
 /**
  * @brief Process the pending file update
  */
-void Worker::processPendingFileUpdate() {
-  // get the current time
-  auto currentTime = QDateTime::currentMSecsSinceEpoch();
+void Worker::process(const models::Transfer &pending) {
+  // extract the source and destination file
+  auto srcFile = pending.getFrom();
 
-  // lock the mutex
-  QMutexLocker locker(&mutex);
-
-  // iterate the pending file update
-  for(auto pending: pendingFiles.keys()) {
-    // get the last update time
-    auto lastUpdateTime = pendingFiles[pending];
-
-    // check the threshold
-    if(currentTime - lastUpdateTime < threshold) {
-      continue;
-    }
-
-    // update the last update time
-    pendingFiles[pending] = currentTime;
-
-    // extract the source and destination file
-    auto srcFile = pending.getFrom();
-
-    // ignore if it is not exists or it is a directory
-    if(!QFileInfo(srcFile).exists() || QFileInfo(srcFile).isDir()) {
-      return;
-    }
-
-    // create an locker object
-    common::Locker locker(srcFile, types::LockMode::READ);
-
-    // lock
-    auto status = locker.tryLock();
-
-    // if it is recoverable, continue
-    if(status == common::ILocker::Error::UNRECOVERABLE) {
-      emit onError("Failed to lock the file " + srcFile);
-      pendingFiles.remove(pending);
-      continue;
-    }
-
-    // if it is recoverable, continue
-    if(status == common::ILocker::Error::RECOVERABLE) {
-      continue;
-    }
-
-    // unlock the file
-    locker.unlock();
-
-    // remove the pending file update
+  // ignore if it is not exists or it is a directory
+  if(!QFileInfo(srcFile).exists() || QFileInfo(srcFile).isDir()) {
     pendingFiles.remove(pending);
+    return;
+  }
 
-    // do copy
-    this->copy(pending);
+  // create an locker object
+  common::Locker locker(srcFile, types::LockMode::READ);
+
+  // lock
+  auto status = locker.tryLock();
+
+  // if it is recoverable, continue
+  if(status == common::ILocker::Error::UNRECOVERABLE) {
+    emit onError("Failed to lock the file " + srcFile);
+    pendingFiles.remove(pending);
+    return;
+  }
+
+  // if it is recoverable, continue
+  if(status == common::ILocker::Error::RECOVERABLE) {
+    return;
+  }
+
+  // unlock the file
+  locker.unlock();
+
+  // remove the pending file update
+  pendingFiles.remove(pending);
+
+  // do copy
+  this->copy(pending);
+}
+
+/**
+ * @brief Process the pending file update
+ */
+void Worker::processPendingFileUpdate() {
+  QMutexLocker locker(&mutex); // lock the mutex
+  auto keys = pendingFiles.keys();
+  for(auto pending: keys) {
+    process(pending);
   }
 }
 
@@ -172,7 +164,6 @@ void Worker::setThreshold(long long threshold) {
 void Worker::handleFileUpdate(models::Transfer transfer) {
   QMutexLocker locker(&mutex);
   auto time = QDateTime::currentMSecsSinceEpoch();
-  QDebug(QtDebugMsg) << pendingFiles.size() << "\n";
   pendingFiles[transfer] = time;
 }
 } // namespace srilakshmikanthanp::pulldog::common

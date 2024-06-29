@@ -67,14 +67,19 @@ class Worker : public QObject {
 
  private:
   /**
-   * @brief slot to handle file rename
+   * @brief Process the pending file update
    */
-  void copy(const models::Transfer &transfer);
+  void process(const models::Transfer &transfer);
 
   /**
    * @brief Slot for time process pending file update
    */
   void processPendingFileUpdate();
+
+  /**
+   * @brief slot to handle file rename
+   */
+  void copy(const models::Transfer &transfer);
 
  public:
   /**
@@ -96,16 +101,6 @@ class Worker : public QObject {
    * @brief Set threshold
    */
   void setThreshold(long long threshold);
-
-  /**
-   * @brief Get the Concurrent Copies
-   */
-  int getConcurrentCopies() const;
-
-  /**
-   * @brief Set the Concurrent Copies
-   */
-  void setConcurrentCopies(int concurrentCopies);
 
   /**
    * @brief slot to handle file update

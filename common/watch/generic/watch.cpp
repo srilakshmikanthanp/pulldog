@@ -109,9 +109,8 @@ void GenericWatch::poll() {
  */
 void GenericWatch::addPath(const QString &path, bool recursive) {
   auto dirWatch = new DirectoryWatcher(path);
-  this->watcher.addPath(path, recursive);
-
   dirWatch->moveToThread(&watcherThread);
+  this->watcher.addPath(path, recursive);
 
   connect(
     dirWatch, &DirectoryWatcher::fileCreated,
@@ -130,7 +129,6 @@ void GenericWatch::addPath(const QString &path, bool recursive) {
 
   QMutexLocker locker(&mutex);
   directories.append(dirWatch);
-
   emit pathsChanged(path, true);
 }
 
