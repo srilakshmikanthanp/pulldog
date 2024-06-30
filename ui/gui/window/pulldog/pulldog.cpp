@@ -115,7 +115,9 @@ void PullDog::onProgressChanged(models::Transfer transfer, double progress) {
  * @brief Add a File Transfer
  */
 void PullDog::addTransfer(const models::Transfer &transfer) {
-  pullInfo->addProgress(new components::Progress(transfer, this));
+  auto progress = new components::Progress(transfer, this);
+  removeTransfer(transfer);
+  pullInfo->addProgress(progress);
 }
 
 /**
