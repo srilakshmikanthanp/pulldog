@@ -22,15 +22,15 @@ Progress::Progress(models::Transfer transfer, QWidget *parent)
   // center align progress text in progress bar
   progressBar->setAlignment(Qt::AlignCenter);
 
+  // get file name
+  auto name = QFileInfo(transfer.getFrom()).fileName();
+
   // create label
-  from    = new QLabel(transfer.getFrom(), this);
-  to      = new QLabel(transfer.getTo(), this);
+  file    = new QLabel(name, this);
 
   // create layout this shows copy from and copy to with progress bar
   auto hLayout = new QHBoxLayout();
-  hLayout->addWidget(from);
-  hLayout->addWidget(new QLabel("to"));
-  hLayout->addWidget(to);
+  hLayout->addWidget(file);
 
   hLayout->setAlignment(Qt::AlignLeft);
   hLayout->setSpacing(5);
@@ -73,6 +73,13 @@ double Progress::getProgress() const {
 }
 
 /**
+ * @brief is finished
+ */
+bool Progress::isFinished() const {
+  return progressBar->value() == 100;
+}
+
+/**
  * @brief get the transfer
  *
  * @return models::Transfer
@@ -105,19 +112,12 @@ void Progress::paintEvent(QPaintEvent *event) {
  * @brief Resize event
  */
 void Progress::resizeEvent(QResizeEvent *event) {
-  auto fromText = transfer.getFrom();
-  auto width = (this->width() / 2) - 150;
-
-  QFontMetrics metrics(from->font());
+  auto fileText = transfer.getFrom();
+  auto width = this->width() - 150;
+  QFontMetrics metrics(file->font());
   QString elidedText = metrics.elidedText(
-    fromText, Qt::ElideRight, width
+    fileText, Qt::ElideRight, width
   );
-  from->setText(elidedText);
-
-  auto toText = transfer.getTo();
-  elidedText = metrics.elidedText(
-    toText, Qt::ElideRight, width
-  );
-  to->setText(elidedText);
+  file->setText(elidedText);
 }
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::components

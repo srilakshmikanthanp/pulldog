@@ -9,8 +9,7 @@ namespace srilakshmikanthanp::pulldog::ui::gui::window {
 /**
  * @brief Construct a new Pull Dog object
  */
-PullDog::PullDog(Controller *controller, QWidget *parent)
-    : QWidget(parent), controller(controller) {
+PullDog::PullDog(Controller *controller, QWidget *parent): QWidget(parent), controller(controller) {
   // create the layout for the default widget
   auto containerLayout = new QVBoxLayout();
 
@@ -70,6 +69,35 @@ PullDog::PullDog(Controller *controller, QWidget *parent)
 }
 
 /**
+ * @brief Function helps to maintain history of progress
+ * but not more than maxProgressHistory
+ */
+void PullDog::maintainProgressHistory() {
+  // if progress list is less than maxProgressHistory
+  if (pullInfo->getProgressList().size() < maxProgressHistory) {
+    return;
+  }
+
+  // number of extra progress
+  auto extraProgress = pullInfo->getProgressList().size() - maxProgressHistory;
+
+  // get progress list
+  auto progressList = pullInfo->getProgressList();
+
+  // if any finished progress found remove it
+  for (auto progress : progressList) {
+    if (progress->isFinished() && extraProgress > 0) {
+      pullInfo->removeProgress(progress);
+      extraProgress--;
+    }
+
+    if (extraProgress == 0) {
+      break;
+    }
+  }
+}
+
+/**
  * @brief On Progress Changed
  */
 void PullDog::onProgressChanged(models::Transfer transfer, double progress) {
@@ -94,15 +122,17 @@ void PullDog::addTransfer(const models::Transfer &transfer) {
  * @brief Remove a File Transfer
  */
 bool PullDog::removeTransfer(const models::Transfer &transfer) {
+  bool found = false;
+
   for (auto progress : pullInfo->getProgressList()) {
     if (progress->getTransfer() == transfer) {
       pullInfo->removeProgress(progress);
-      return true;
+      found = true;
     }
   }
 
   // if not found
-  return false;
+  return found;
 }
 
 /**
@@ -138,5 +168,32 @@ void PullDog::setDestinationRoot(const QString &destRoot) {
  */
 QString PullDog::getDestinationRoot() const {
   return settings->getDestinationRoot();
+}
+
+/**
+ * @brief Set max Progress History
+ */
+void PullDog::setMaxProgressHistory(int maxProgressHistory) {
+  this->maxProgressHistory = maxProgressHistory;
+}
+
+/**
+ * @brief Get max Progress History
+ */
+int PullDog::getMaxProgressHistory() const {
+  return maxProgressHistory;
+}
+
+/**
+ * @brief Handle End
+ */
+void PullDog::onCopyEnd(const models::Transfer &transfer) {
+  for (auto progress : pullInfo->getProgressList()) {
+    if (progress->getTransfer() == transfer) {
+      progress->setProgress(100);
+      maintainProgressHistory();
+      return;
+    }
+  }
 }
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::window

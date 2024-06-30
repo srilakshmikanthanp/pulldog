@@ -14,11 +14,6 @@ void Controller::handleFileUpdate(const QString dir, const QString path) {
   auto destFile = destinationRoot.filePath(QFileInfo(dir).fileName() + "/" + path);
   auto srcFile = QDir(dir).filePath(path);
 
-  // ignore if it is not exists or it is a directory
-  if(!QFileInfo(srcFile).exists() || QFileInfo(srcFile).isDir()) {
-    return;
-  }
-
   // Create a key for the pending file update
   auto key = models::Transfer(srcFile, destFile);
 

@@ -12,6 +12,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPainter>
+#include <QFileInfo>
 #include <QStyleOption>
 
 #include "models/transfer/transfer.hpp"
@@ -30,8 +31,7 @@ class Progress : public QWidget {
  private:
   QProgressBar *progressBar;
   models::Transfer transfer;
-  QLabel *from;
-  QLabel *to;
+  QLabel *file;
 
  public:
   /**
@@ -66,6 +66,11 @@ class Progress : public QWidget {
    * @return models::Transfer
    */
   models::Transfer getTransfer() const;
+
+  /**
+   * @brief is finished
+   */
+  bool isFinished() const;
 
   /**
    * @brief Paint event

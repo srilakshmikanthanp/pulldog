@@ -127,6 +127,17 @@ void FolderList::removePath(const QString &path) {
       tilesLayout->removeWidget(tile);
       tile->deleteLater();
       tiles.removeOne(tile);
+
+      disconnect(
+        tile, &FolderTile::removeWatchTile,
+        this, &FolderList::removePath
+      );
+
+      disconnect(
+        tile, &FolderTile::removeWatchTile,
+        this, &FolderList::onFolderRemoved
+      );
+
       break;
     }
   }

@@ -34,6 +34,9 @@ class PullDog : public QWidget {
   QStackedWidget *stackedWidget = new QStackedWidget();
   Controller *controller;
 
+ private:
+  int maxProgressHistory = 10;
+
  signals:
   /**
    * @brief On Destination Root Changed
@@ -45,6 +48,13 @@ class PullDog : public QWidget {
    * @brief signal to emit folder removed
    */
   void onFolderRemoved(const QString &path);
+
+ private:
+  /**
+   * @brief Function helps to maintain history of progress
+   * but not more than maxProgressHistory
+   */
+  void maintainProgressHistory();
 
  signals:
   /**
@@ -97,6 +107,21 @@ class PullDog : public QWidget {
    * @brief Get the Destination Root
    */
   QString getDestinationRoot() const;
+
+  /**
+   * @brief Set max Progress History
+   */
+  void setMaxProgressHistory(int maxProgressHistory);
+
+  /**
+   * @brief Get max Progress History
+   */
+  int getMaxProgressHistory() const;
+
+  /**
+   * @brief Handle End
+   */
+  void onCopyEnd(const models::Transfer &transfer);
 
   /**
    * @brief On Progress Changed

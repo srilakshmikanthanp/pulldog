@@ -187,7 +187,7 @@ class PullDogApplication : public SingleApplication {
     // on copy end
     connect(
       controller, &Controller::onCopyEnd,
-      window, &PullDog::removeTransfer
+      window, &PullDog::onCopyEnd
     );
 
     // on progress changed

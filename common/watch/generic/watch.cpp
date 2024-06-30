@@ -34,7 +34,6 @@ void DirectoryWatcher::poll() {
   for(const auto &file: fs::recursive_directory_iterator(path.toStdString())) {
     auto fileInfo = QFileInfo(file.path().string().c_str());
     auto filePath = fileInfo.filePath();
-    auto lastModified = fileInfo.lastModified();
 
     // infer relative path using fs::relative
     auto relPath = fs::relative(file.path(), path.toStdString());
@@ -46,7 +45,10 @@ void DirectoryWatcher::poll() {
       continue;
     }
 
-    if(files[filePath].lastModified() != lastModified) {
+    auto cacheLast = files[filePath].lastModified().toUTC();
+    auto fileLast = fileInfo.lastModified().toUTC();
+
+    if( cacheLast != fileLast ) {
       emit fileUpdated(path, relStr);
       files[filePath] = fileInfo;
     }

@@ -73,7 +73,7 @@ void PullInfo::removeProgress(components::Progress *progress) {
  */
 void PullInfo::addProgress(components::Progress *progress) {
   // add the progress to the layout
-  this->scrollAreaLayout->addWidget(progress);
+  this->scrollAreaLayout->insertWidget(0, progress);
 
   // add the progress to the list
   this->progressList.append(progress);

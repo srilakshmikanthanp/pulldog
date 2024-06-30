@@ -69,7 +69,7 @@ class FolderList : public QWidget {
   /**
    * @brief Construct a new FolderList object
    *
-   * @param watchlist
+   * @param watchList
    * @param parent
    */
   FolderList(QWidget *parent = nullptr);
@@ -80,24 +80,24 @@ class FolderList : public QWidget {
   ~FolderList();
 
   /**
-   * @brief set the watchlist
+   * @brief set the watchList
    *
-   * @param watchlist
+   * @param watchList
    */
-  void setFolderList(QStringList watchlist);
+  void setFolderList(QStringList watchList);
 
   /**
-   * @brief Add a directory to watchlist
+   * @brief Add a directory to watchList
    */
   void addPath(const QString &path);
 
   /**
-   * @brief Remove a directory from watchlist
+   * @brief Remove a directory from watchList
    */
   void removePath(const QString &path);
 
   /**
-   * @brief get the watchlist
+   * @brief get the watchList
    *
    * @return QStringList
    */

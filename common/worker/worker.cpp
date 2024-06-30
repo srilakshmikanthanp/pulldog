@@ -88,9 +88,16 @@ void Worker::copy(const models::Transfer &transfer) {
 void Worker::process(const models::Transfer &pending) {
   // extract the source and destination file
   auto srcFile = pending.getFrom();
+  auto srcInfo = QFileInfo(srcFile);
 
   // ignore if it is not exists or it is a directory
-  if(!QFileInfo(srcFile).exists() || QFileInfo(srcFile).isDir()) {
+  if(!srcInfo.exists() || srcInfo.isDir()) {
+    pendingFiles.remove(pending);
+    return;
+  }
+
+  // if it is upto date, remove the pending file update
+  if (isUptoDate(pending)) {
     pendingFiles.remove(pending);
     return;
   }
@@ -121,6 +128,28 @@ void Worker::process(const models::Transfer &pending) {
 
   // do copy
   this->copy(pending);
+}
+
+/**
+ * @brief Is dest file upto date
+ */
+bool Worker::isUptoDate(const models::Transfer &transfer) {
+  // if dest file not exists return false
+  if(!QFileInfo(transfer.getTo()).exists()) {
+    return false;
+  }
+
+  // get the last update time of src and first create time of dest
+  auto srcInfo   = QFileInfo(transfer.getFrom());
+  auto destInfo  = QFileInfo(transfer.getTo());
+  auto srcLast   = srcInfo.lastModified().toUTC();
+  auto destFirst = destInfo.birthTime().toUTC();
+  auto srcSize   = srcInfo.size();
+  auto destSize  = destInfo.size();
+
+  // if dest file exists and its created time is
+  // greater than the last update of src file
+  return  destFirst >= srcLast && srcSize == destSize;
 }
 
 /**

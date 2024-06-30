@@ -81,6 +81,11 @@ class Worker : public QObject {
    */
   void copy(const models::Transfer &transfer);
 
+  /**
+   * @brief Is dest file upto date
+   */
+  bool isUptoDate(const models::Transfer &transfer);
+
  public:
   /**
    * @brief Construct a new File Processor object
