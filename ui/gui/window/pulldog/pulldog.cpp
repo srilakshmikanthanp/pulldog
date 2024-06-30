@@ -78,16 +78,16 @@ void PullDog::maintainProgressHistory() {
     return;
   }
 
+  // get the progress list
+  auto list = pullInfo->getProgressList();
+
   // number of extra progress
-  auto extraProgress = pullInfo->getProgressList().size() - maxProgressHistory;
+  auto extraProgress = list.size() - maxProgressHistory;
 
-  // get progress list
-  auto progressList = pullInfo->getProgressList();
-
-  // if any finished progress found remove it
-  for (auto progress : progressList) {
-    if (progress->isFinished() && extraProgress > 0) {
-      pullInfo->removeProgress(progress);
+  // if any finished progress found remove it reversed
+  for (auto progress = list.rbegin(); progress != list.rend(); progress++) {
+    if ((*progress)->isFinished() && extraProgress > 0) {
+      pullInfo->removeProgress(*progress);
       extraProgress--;
     }
 
