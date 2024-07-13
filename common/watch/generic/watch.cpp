@@ -11,10 +11,12 @@ namespace srilakshmikanthanp::pulldog::common {
  */
 DirectoryWatcher::DirectoryWatcher(const QString &path, QObject *parent): QObject(parent), path(path) {
   for(const auto &file: std::filesystem::recursive_directory_iterator(path.toStdString())) {
-    auto fileInfo = QFileInfo(file.path().string().c_str());
+    auto fileInfo = QFileInfo(QString::fromStdWString(file.path().wstring()));
     auto filePath = fileInfo.filePath();
     files[filePath] = fileInfo;
   }
+
+  qDebug() << "Watching: " << files.size() << " files";
 }
 
 /**
@@ -32,23 +34,26 @@ void DirectoryWatcher::poll() {
 
   // for created and updated files
   for(const auto &file: fs::recursive_directory_iterator(path.toStdString())) {
-    auto fileInfo = QFileInfo(file.path().string().c_str());
+    auto fileInfo = QFileInfo(QString::fromStdWString(file.path().wstring()));
     auto filePath = fileInfo.filePath();
 
     // infer relative path using fs::relative
-    auto relPath = fs::relative(file.path(), path.toStdString());
-    auto relStr = QString::fromStdString(relPath.string());
+    auto relPath = fs::relative(file.path(), path.toStdWString());
+    auto relStr = QString::fromStdWString(relPath.wstring());
 
+    // if the file is not in the cache
     if(!files.contains(filePath)) {
       emit fileCreated(path, relStr);
       files[filePath] = fileInfo;
       continue;
     }
 
+    // get the last modified time
     auto cacheLast = files[filePath].lastModified().toUTC();
     auto fileLast = fileInfo.lastModified().toUTC();
 
-    if( cacheLast != fileLast ) {
+    // if the file is updated
+    if(cacheLast != fileLast) {
       emit fileUpdated(path, relStr);
       files[filePath] = fileInfo;
     }
@@ -56,9 +61,9 @@ void DirectoryWatcher::poll() {
 
   // for removed files
   for(auto it = files.begin(); it != files.end();) {
-    if (!fs::exists(it.key().toStdString())) {
-      auto relPath = fs::relative(it.key().toStdString(), path.toStdString());
-      auto relStr = QString::fromStdString(relPath.string());
+    if (!fs::exists(it.key().toStdWString())) {
+      auto relPath = fs::relative(it.key().toStdWString(), path.toStdWString());
+      auto relStr = QString::fromStdWString(relPath.wstring());
       emit fileRemoved(path, relStr);
       it = files.erase(it);
     } else {
@@ -81,16 +86,19 @@ GenericWatch::GenericWatch(QObject *parent) {
   connect(&poller, &QTimer::timeout, this, &GenericWatch::poll);
 
   // move to the thread
+#ifdef _WIN32
   watcher.moveToThread(&watcherThread);
+  watcherThread.start();
+#endif
+
   poller.moveToThread(&pollerThread);
 
   // start the poller
   connect(&pollerThread, &QThread::started, [this] {
-    poller.start(1000);
+    poller.start(pollInterval);
   });
 
   // start the thread's
-  watcherThread.start();
   pollerThread.start();
 }
 
@@ -110,9 +118,21 @@ void GenericWatch::poll() {
  * @param path
  */
 void GenericWatch::addPath(const QString &path, bool recursive) {
-  auto dirWatch = new DirectoryWatcher(path);
-  dirWatch->moveToThread(&watcherThread);
+  DirectoryWatcher *dirWatch = nullptr;
+
+  try {
+    dirWatch = new DirectoryWatcher(path);
+  } catch(const std::exception &e) {
+    emit onError(e.what());
+    emit pathRemoved(path);
+    return;
+  }
+
+#ifdef _WIN32
   this->watcher.addPath(path, recursive);
+#endif
+
+  dirWatch->moveToThread(&watcherThread);
 
   connect(
     dirWatch, &DirectoryWatcher::fileCreated,
@@ -131,7 +151,8 @@ void GenericWatch::addPath(const QString &path, bool recursive) {
 
   QMutexLocker locker(&mutex);
   directories.append(dirWatch);
-  emit pathsChanged(path, true);
+  emit pathAdded(path);
+  locker.unlock();
 }
 
 /**
@@ -141,10 +162,16 @@ void GenericWatch::addPath(const QString &path, bool recursive) {
  */
 void GenericWatch::removePath(const QString &path) {
   QMutexLocker locker(&mutex);
+
+#ifdef _WIN32
   watcher.removePath(path);
+#endif
+
   directories.removeIf([path](auto dir) {
     return dir->getPath() == path;
   });
+
+  emit pathRemoved(path);
 }
 
 /**

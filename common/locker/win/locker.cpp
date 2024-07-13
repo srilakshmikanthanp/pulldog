@@ -12,8 +12,8 @@ namespace srilakshmikanthanp::pulldog::common {
  * @param file
  * @param parent
  */
-Locker::Locker(const QString file, types::LockMode mode, QObject *parent)
-  : ILocker(parent), file(file), mode(mode) {
+Locker::Locker(const QString file, types::LockMode mode, types::LockType type, QObject *parent)
+  : ILocker(parent), file(file), mode(mode), type(type) {
   // Do nothing
 }
 
@@ -28,9 +28,12 @@ int Locker::tryLock() {
   auto shareMode = FILE_SHARE_READ;
   auto openMode = OPEN_EXISTING;
 
-  if (mode == types::LockMode::WRITE) {
-    openMode = CREATE_ALWAYS;
+  if (mode == types::LockMode::NOSHARE) {
     shareMode = 0;
+  }
+
+  if (type == types::LockType::WRITE) {
+    openMode = CREATE_ALWAYS;
   }
 
   this->hFile = CreateFile(
@@ -63,7 +66,7 @@ int Locker::tryLock() {
  */
 int Locker::lock(MSec timeout) {
   // if file not exists, return error
-  if (!QFile::exists(file) && mode == types::LockMode::READ) {
+  if (!QFile::exists(file) && mode == types::LockMode::SHARE) {
     return Error::UNRECOVERABLE;
   }
 

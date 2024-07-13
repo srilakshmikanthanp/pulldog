@@ -6,5 +6,13 @@
 // https://opensource.org/licenses/MIT
 
 namespace srilakshmikanthanp::pulldog::types {
-enum class LockMode { READ, WRITE };
-}
+/**
+ * @brief Lock mode
+ */
+enum class LockMode { SHARE, NOSHARE };
+
+/**
+ * @brief Lock type
+ */
+enum class LockType { READ, WRITE };
+}  // namespace srilakshmikanthanp::pulldog::types

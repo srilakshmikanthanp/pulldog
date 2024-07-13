@@ -26,7 +26,7 @@ FolderTile::FolderTile(const QString &path, QWidget* parent) : path(path), QWidg
   // set up the connections
   connect(
     removeButton, &QPushButton::clicked,
-    this, &FolderTile::onRemove
+    this, &FolderTile::onRemoveRequested
   );
 
   // set up the language
@@ -57,7 +57,7 @@ void FolderTile::setupLanguage() {
 /**
  * @brief on remove button clicked
  */
-void FolderTile::onRemove() {
+void FolderTile::onRemoveRequested() {
   emit removeWatchTile(path);
 }
 

@@ -72,10 +72,15 @@ class GenericWatch : public IWatch {
  private:
   QList<DirectoryWatcher*> directories;
   mutable QMutex mutex;
-  WinWatch watcher;
   QTimer poller;
   QThread watcherThread;
   QThread pollerThread;
+
+#ifdef _WIN32
+  WinWatch watcher;
+#endif
+
+  constexpr static int pollInterval = 1000;
 
  private:
   void poll();

@@ -51,14 +51,14 @@ PullDog::PullDog(Controller *controller, QWidget *parent): QWidget(parent), cont
 
   // connect added
   connect(
-    settings, &screens::Settings::onFolderAdded,
-    this, &PullDog::onFolderAdded
+    settings, &screens::Settings::onFolderAddRequested,
+    this, &PullDog::onFolderAddRequested
   );
 
   // connect removed
   connect(
-    settings, &screens::Settings::onFolderRemoved,
-    this, &PullDog::onFolderRemoved
+    settings, &screens::Settings::onFolderRemoveRequested,
+    this, &PullDog::onFolderRemoveRequested
   );
 
   // connect destination path changed

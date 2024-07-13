@@ -31,6 +31,7 @@ class Locker : public ILocker {
  private:
   HANDLE hFile = INVALID_HANDLE_VALUE;
   types::LockMode mode;
+  types::LockType type;
   QString file;
 
  private: // Just for qt
@@ -40,7 +41,12 @@ class Locker : public ILocker {
   /**
    * @brief Construct a new ILocker object
    */
-  Locker(const QString, types::LockMode mode, QObject *parent = nullptr);
+  Locker(
+    const QString,
+    types::LockMode mode = types::LockMode::SHARE,
+    types::LockType type = types::LockType::READ,
+    QObject *parent = nullptr
+  );
 
   /**
    * @brief Destroy the ILocker object

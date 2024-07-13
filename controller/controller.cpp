@@ -86,8 +86,13 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   );
 
   connect(
-    &watcher, &common::Watch::pathsChanged,
-    this, &Controller::pathsChanged
+    &watcher, &common::Watch::pathAdded,
+    this, &Controller::pathAdded
+  );
+
+  connect(
+    &watcher, &common::Watch::pathRemoved,
+    this, &Controller::pathRemoved
   );
 
   connect(
@@ -136,7 +141,9 @@ void Controller::setThreshold(long long threshold) {
  * @param path
  */
 void Controller::addWatchPath(const QString &path, bool recursive) {
-  watcher.addPath(path, recursive);
+  QMetaObject::invokeMethod(
+    &watcher, [=] { this->watcher.addPath(path, recursive); }
+  );
 }
 
 /**
@@ -150,6 +157,8 @@ QStringList Controller::watchPaths() const {
  * @brief Remove a path from watch
  */
 void Controller::removeWatchPath(const QString &path) {
-  watcher.removePath(path);
+  QMetaObject::invokeMethod(
+    &watcher, [=] { this->watcher.removePath(path); }
+  );
 }
 }  // namespace srilakshmikanthanp::pulldog

@@ -67,10 +67,8 @@ void FolderList::onAdd() {
     return;
   }
 
-  this->addPath(path);
-
   // emit the signal
-  emit onFolderAdded(path);
+  emit onFolderAddRequested(path);
 }
 
 /**
@@ -107,12 +105,7 @@ void FolderList::addPath(const QString &path) {
 
   connect(
     tile, &FolderTile::removeWatchTile,
-    this, &FolderList::removePath
-  );
-
-  connect(
-    tile, &FolderTile::removeWatchTile,
-    this, &FolderList::onFolderRemoved
+    this, &FolderList::onFolderRemoveRequested
   );
 }
 
@@ -124,19 +117,19 @@ void FolderList::removePath(const QString &path) {
 
   for (auto tile : tiles) {
     if (tile->getPath() == path) {
-      tilesLayout->removeWidget(tile);
-      tile->deleteLater();
-      tiles.removeOne(tile);
+      disconnect(
+        tile, &FolderTile::removeWatchTile,
+        this, &FolderList::onFolderRemoveRequested
+      );
 
       disconnect(
         tile, &FolderTile::removeWatchTile,
         this, &FolderList::removePath
       );
 
-      disconnect(
-        tile, &FolderTile::removeWatchTile,
-        this, &FolderList::onFolderRemoved
-      );
+      tilesLayout->removeWidget(tile);
+      tile->deleteLater();
+      tiles.removeOne(tile);
 
       break;
     }

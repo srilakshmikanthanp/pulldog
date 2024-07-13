@@ -86,7 +86,7 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
       watcher->onError(QString("Error in re-issuing ReadDirectoryChangesW: %1").arg(GetLastError()));
       watcher->directories.removeOne(directory);
       CloseHandle(directory->handle);
-      emit watcher->pathsChanged(directory->baseDir, false);
+      emit watcher->pathRemoved(directory->baseDir);
     }
   });
 
@@ -185,13 +185,13 @@ void WinWatch::addPath(const QString &path, bool recursive) {
   if (!readDirectoryChanges(directory)) {
     onError(QString("Error in ReadDirectoryChangesW: %1").arg(GetLastError()));
     CloseHandle(directory->handle);
-    emit pathsChanged(path, false);
+    emit pathRemoved(path);
     return;
   }
 
   directories.push_back(directory);
 
-  emit pathsChanged(path, true);
+  emit pathAdded(path);
 }
 
 /**

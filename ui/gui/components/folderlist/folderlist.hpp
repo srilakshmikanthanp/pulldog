@@ -56,13 +56,13 @@ class FolderList : public QWidget {
   /**
    * @brief signal to emit folder removed
    */
-  void onFolderRemoved(const QString &path);
+  void onFolderRemoveRequested(const QString &path);
 
  signals:
   /**
    * @brief signal to emit folder added
    */
-  void onFolderAdded(const QString &path);
+  void onFolderAddRequested(const QString &path);
 
  public:
 

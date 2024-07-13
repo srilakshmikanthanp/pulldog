@@ -46,7 +46,7 @@ class FolderTile : public QWidget {
   /**
    * @brief on remove button clicked
    */
-  void onRemove();
+  void onRemoveRequested();
 
  signals:
   /**

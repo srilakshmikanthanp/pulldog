@@ -46,14 +46,14 @@ Settings::Settings(QWidget *parent) : QWidget(parent) {
 
   // connect folderListChanged signal
   connect(
-    watchList, &components::FolderList::onFolderAdded,
-    this, &Settings::onFolderAdded
+    watchList, &components::FolderList::onFolderAddRequested,
+    this, &Settings::onFolderAddRequested
   );
 
   // connect folderListChanged signal
   connect(
-    watchList, &components::FolderList::onFolderRemoved,
-    this, &Settings::onFolderRemoved
+    watchList, &components::FolderList::onFolderRemoveRequested,
+    this, &Settings::onFolderRemoveRequested
   );
 
   // connect pathChanged signal

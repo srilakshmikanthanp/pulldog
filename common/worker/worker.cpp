@@ -103,7 +103,7 @@ void Worker::process(const models::Transfer &pending) {
   }
 
   // create an locker object
-  common::Locker locker(srcFile, types::LockMode::READ);
+  common::Locker locker(srcFile, types::LockMode::SHARE);
 
   // lock
   auto status = locker.tryLock();

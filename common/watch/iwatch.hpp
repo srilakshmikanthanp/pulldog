@@ -32,7 +32,10 @@ class IWatch : public QObject {
   );
 
  signals:
-  void pathsChanged(const QString &path, bool isAdded);
+  void pathRemoved(const QString &path);
+
+ signals:
+  void pathAdded(const QString &path);
 
  signals:
   void onError(const QString &error);
