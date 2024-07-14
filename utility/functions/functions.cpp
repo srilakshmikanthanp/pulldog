@@ -63,8 +63,7 @@ void setPlatformAttributes(QWidget *widget) {
     nullptr
   );
 
-  // log code: string
-  qWarning() << result << " : " << errorText;
+  // qWarning() << result << " : " << errorText;
 
   // free the error string
   LocalFree(errorText);

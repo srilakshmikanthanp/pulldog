@@ -119,7 +119,6 @@ class PullDogApplication : public SingleApplication {
     // set watch list
     for (const auto &path : storage->getPaths()) {
       controller->addWatchPath(path);
-      window->addWatchPath(path);
     }
 
     // tray icon click from content
@@ -172,24 +171,20 @@ class PullDogApplication : public SingleApplication {
       window, &PullDog::addWatchPath
     );
 
-    connect(
-      controller, &Controller::pathRemoved,
-      window, &PullDog::removeWatchPath
-    );
-
     // remove watch list signal to controller
     connect(
       window, &PullDog::onFolderRemoveRequested,
       storage, &storage::Storage::removePath
     );
 
-    // storage to controller
     connect(
       storage, &storage::Storage::onPathRemoved,
-      [=](const QString &path) {
-        controller->removeWatchPath(path);
-        window->removeWatchPath(path);
-      }
+      [=](const QString &path) { controller->removeWatchPath(path); }
+    );
+
+    connect(
+      controller, &Controller::pathRemoved,
+      window, &PullDog::removeWatchPath
     );
 
     // on copy start

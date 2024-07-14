@@ -3,7 +3,7 @@
 ; constants used in the script
 #define PulldogPublisher "srilakshmikanthanp"
 #define PulldogName "pulldog"
-#define PulldogVersion "1.0.0"
+#define PulldogVersion "0.0.1"
 #define PulldogUUID "f4b84e82-54df-47fc-8a90-05fd21f42dd1"
 #define PulldogURL "https://github.com/srilakshmikanthanp/pulldog"
 #define PulldogExeName "pulldog.exe"

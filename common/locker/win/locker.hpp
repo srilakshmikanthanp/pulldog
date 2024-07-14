@@ -26,7 +26,10 @@ class Locker : public ILocker {
   Q_DISABLE_COPY(Locker)
 
  private:
+  using LockMode = types::LockMode;
   using MSec = std::chrono::milliseconds;
+  using LockType = types::LockType;
+
 
  private:
   HANDLE hFile = INVALID_HANDLE_VALUE;
@@ -43,8 +46,8 @@ class Locker : public ILocker {
    */
   Locker(
     const QString,
-    types::LockMode mode = types::LockMode::SHARE,
-    types::LockType type = types::LockType::READ,
+    LockMode mode = types::LockMode::SHARE,
+    LockType type = types::LockType::READ,
     QObject *parent = nullptr
   );
 

@@ -15,8 +15,6 @@ DirectoryWatcher::DirectoryWatcher(const QString &path, QObject *parent): QObjec
     auto filePath = fileInfo.filePath();
     files[filePath] = fileInfo;
   }
-
-  qDebug() << "Watching: " << files.size() << " files";
 }
 
 /**
@@ -41,21 +39,26 @@ void DirectoryWatcher::poll() {
     auto relPath = fs::relative(file.path(), path.toStdWString());
     auto relStr = QString::fromStdWString(relPath.wstring());
 
+    // to preferred style
+    relStr = QDir::cleanPath(relStr);
+
     // if the file is not in the cache
     if(!files.contains(filePath)) {
-      emit fileCreated(path, relStr);
       files[filePath] = fileInfo;
+      emit fileCreated(path, relStr);
       continue;
     }
 
     // get the last modified time
     auto cacheLast = files[filePath].lastModified().toUTC();
     auto fileLast = fileInfo.lastModified().toUTC();
+    auto cacheSize = files[filePath].size();
+    auto fileSize = fileInfo.size();
 
     // if the file is updated
-    if(cacheLast != fileLast) {
-      emit fileUpdated(path, relStr);
+    if(cacheLast != fileLast || cacheSize != fileSize) {
       files[filePath] = fileInfo;
+      emit fileUpdated(path, relStr);
     }
   }
 
@@ -117,8 +120,9 @@ void GenericWatch::poll() {
  *
  * @param path
  */
-void GenericWatch::addPath(const QString &path, bool recursive) {
+void GenericWatch::addPath(const QString &dir, bool recursive) {
   DirectoryWatcher *dirWatch = nullptr;
+  auto path = QDir::cleanPath(dir);
 
   try {
     dirWatch = new DirectoryWatcher(path);
@@ -160,8 +164,9 @@ void GenericWatch::addPath(const QString &path, bool recursive) {
  *
  * @param path
  */
-void GenericWatch::removePath(const QString &path) {
+void GenericWatch::removePath(const QString &dir) {
   QMutexLocker locker(&mutex);
+  auto path = QDir::cleanPath(dir);
 
 #ifdef _WIN32
   watcher.removePath(path);

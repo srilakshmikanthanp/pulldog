@@ -9,7 +9,7 @@ namespace srilakshmikanthanp::pulldog::types {
 /**
  * @brief Lock mode
  */
-enum class LockMode { SHARE, NOSHARE };
+enum class LockMode { SHARE, EXCLUSIVE };
 
 /**
  * @brief Lock type

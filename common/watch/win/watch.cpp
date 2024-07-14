@@ -12,6 +12,9 @@ void WinWatch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fil
   auto relative = std::filesystem::relative(filePath.toStdString(), dir->baseDir.toStdString());
   auto relQtStr = QString::fromStdString(relative.string());
 
+  // to preferred style
+  relQtStr = QDir::cleanPath(relQtStr);
+
   switch (fileInfo->Action) {
     case FILE_ACTION_MODIFIED:
       emit fileUpdated(dir->baseDir, relQtStr);
@@ -158,8 +161,9 @@ QStringList WinWatch::paths() const {
  *
  * @param path
  */
-void WinWatch::addPath(const QString &path, bool recursive) {
+void WinWatch::addPath(const QString &dir, bool recursive) {
   WinWatch::DirWatch *directory = new WinWatch::DirWatch();
+  auto path = QDir::cleanPath(dir);
 
   directory->handle = CreateFileW(
     path.toStdWString().c_str(),
@@ -199,7 +203,8 @@ void WinWatch::addPath(const QString &path, bool recursive) {
  *
  * @param path
  */
-void WinWatch::removePath(const QString &path) {
+void WinWatch::removePath(const QString &dir) {
+  auto path = QDir::cleanPath(dir);
   for (auto dir: directories) {
     if (this->getFileNameFromHandle(dir->handle) == path) {
       CloseHandle(dir->handle);

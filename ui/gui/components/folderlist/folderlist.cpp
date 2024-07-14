@@ -63,6 +63,8 @@ void FolderList::onAdd() {
     this, tr("Select a directory"), QDir::homePath()
   );
 
+  path = QDir::cleanPath(path);
+
   if (path.isEmpty()) {
     return;
   }
@@ -116,23 +118,25 @@ void FolderList::removePath(const QString &path) {
   watchList.removeOne(path);
 
   for (auto tile : tiles) {
-    if (tile->getPath() == path) {
-      disconnect(
-        tile, &FolderTile::removeWatchTile,
-        this, &FolderList::onFolderRemoveRequested
-      );
-
-      disconnect(
-        tile, &FolderTile::removeWatchTile,
-        this, &FolderList::removePath
-      );
-
-      tilesLayout->removeWidget(tile);
-      tile->deleteLater();
-      tiles.removeOne(tile);
-
-      break;
+    if (tile->getPath() != path) {
+      continue;
     }
+
+    disconnect(
+      tile, &FolderTile::removeWatchTile,
+      this, &FolderList::onFolderRemoveRequested
+    );
+
+    disconnect(
+      tile, &FolderTile::removeWatchTile,
+      this, &FolderList::removePath
+    );
+
+    tilesLayout->removeWidget(tile);
+    tile->deleteLater();
+    tiles.removeOne(tile);
+
+    break;
   }
 }
 

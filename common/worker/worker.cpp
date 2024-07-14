@@ -54,6 +54,21 @@ void Worker::copy(const models::Transfer &transfer) {
     this, &Worker::onError
   );
 
+  // to remove the copier from the map
+  connect(
+    copier, &common::Copier::onCopyEnd,
+    [this, transfer]() {
+      copingFiles.remove(transfer);
+    }
+  );
+
+  connect(
+    copier, &common::Copier::onCopyCancel,
+    [this, transfer]() {
+      copingFiles.remove(transfer);
+    }
+  );
+
   // for delete the copier object
   connect(
     copier, &common::Copier::onCopyEnd,
@@ -67,14 +82,6 @@ void Worker::copy(const models::Transfer &transfer) {
 
   // add the copier to the coping files
   copingFiles[transfer] = copier;
-
-  // to remove the copier from the map
-  connect(
-    copier, &common::Copier::destroyed,
-    [this, transfer]() {
-      copingFiles.remove(transfer);
-    }
-  );
 
   // start the copier on thread pool
   QThreadPool::globalInstance()->start([copier]() {
@@ -103,7 +110,9 @@ void Worker::process(const models::Transfer &pending) {
   }
 
   // create an locker object
-  common::Locker locker(srcFile, types::LockMode::SHARE);
+  common::Locker locker(
+    srcFile, types::LockMode::EXCLUSIVE, types::LockType::READ
+  );
 
   // lock
   auto status = locker.tryLock();

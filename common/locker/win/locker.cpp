@@ -28,7 +28,7 @@ int Locker::tryLock() {
   auto shareMode = FILE_SHARE_READ;
   auto openMode = OPEN_EXISTING;
 
-  if (mode == types::LockMode::NOSHARE) {
+  if (mode == types::LockMode::EXCLUSIVE) {
     shareMode = 0;
   }
 
@@ -84,7 +84,7 @@ int Locker::lock(MSec timeout) {
     QThread::msleep(sleepTime);
   }
 
-  return -1;
+  return Error::UNRECOVERABLE;
 }
 
 /**

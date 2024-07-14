@@ -50,6 +50,7 @@ void PathPick::setupLanguage() {
 void PathPick::onBrowse() {
   // open file dialog
   auto path = QFileDialog::getExistingDirectory(this, tr("Choose Path to save Files"), this->path);
+  path = QDir::cleanPath(path);
 
   // check path
   if (path.isEmpty()) {
