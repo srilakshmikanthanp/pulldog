@@ -56,7 +56,7 @@ class Controller : public QObject {
   void onCopyEnd(const models::Transfer &transfer);
 
  signals:
-  void onCopyCancel(const models::Transfer &transfer);
+  void onCopyFailed(const models::Transfer &transfer);
 
  signals:
   void pathAdded(const QString &path);

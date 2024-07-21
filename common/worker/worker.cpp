@@ -9,13 +9,33 @@ namespace srilakshmikanthanp::pulldog::common {
 /**
  * @brief start to Copy the file with copier object
  */
-void Worker::copy(const models::Transfer &transfer) {
-  if(copingFiles.contains(transfer)) {
-    auto copier = copingFiles[transfer];
-    copier->cancel();
-    copingFiles.remove(transfer);
+void Worker::checkAndCopy(const models::Transfer &transfer) {
+  if(!copingFiles.contains(transfer)) {
+    this->copy(transfer);
+    return;
   }
 
+  auto copier = copingFiles[transfer];
+
+  // on cancel or end start copy
+  connect(
+    copier, &common::Copier::onCopyEnd,
+    [this, transfer] { this->copy(transfer); }
+  );
+
+  connect(
+    copier, &common::Copier::onCopyFailed,
+    [this, transfer] { this->copy(transfer); }
+  );
+
+  // cancel the copy
+  copier->cancel();
+}
+
+/**
+ * @brief slot to handle file rename
+ */
+void Worker::copy(const models::Transfer &transfer) {
   auto srcFile = transfer.getFrom();
   auto destFile = transfer.getTo();
 
@@ -45,8 +65,8 @@ void Worker::copy(const models::Transfer &transfer) {
   );
 
   connect(
-    copier, &common::Copier::onCopyCancel,
-    this, &Worker::onCopyCancel
+    copier, &common::Copier::onCopyFailed,
+    this, &Worker::onCopyFailed
   );
 
   connect(
@@ -56,28 +76,19 @@ void Worker::copy(const models::Transfer &transfer) {
 
   // to remove the copier from the map
   connect(
-    copier, &common::Copier::onCopyEnd,
-    [this, transfer]() {
+    copier, &common::Copier::onCopyFailed,
+    [this, transfer, copier]() {
       copingFiles.remove(transfer);
+      copier->deleteLater();
     }
   );
 
   connect(
-    copier, &common::Copier::onCopyCancel,
-    [this, transfer]() {
-      copingFiles.remove(transfer);
-    }
-  );
-
-  // for delete the copier object
-  connect(
     copier, &common::Copier::onCopyEnd,
-    copier, &common::Copier::deleteLater
-  );
-
-  connect(
-    copier, &common::Copier::onCopyCancel,
-    copier, &common::Copier::deleteLater
+    [this, transfer, copier]() {
+      copingFiles.remove(transfer);
+      copier->deleteLater();
+    }
   );
 
   // add the copier to the coping files
@@ -136,7 +147,7 @@ void Worker::process(const models::Transfer &pending) {
   pendingFiles.remove(pending);
 
   // do copy
-  this->copy(pending);
+  this->checkAndCopy(pending);
 }
 
 /**

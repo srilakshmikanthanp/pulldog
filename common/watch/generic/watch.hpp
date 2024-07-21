@@ -27,8 +27,11 @@ class DirectoryWatcher : public QObject {
   Q_OBJECT
 
  private:
-  QMap<QString, QFileInfo> files;
   QString path;
+
+ private:
+  QMap<QString, QFileInfo> files;
+
 
  signals:
   void fileCreated(const QString &dir, const QString &file);
@@ -70,17 +73,14 @@ class GenericWatch : public IWatch {
   Q_OBJECT
 
  private:
+  constexpr static int pollInterval = 1000;
+
+ private:
   QList<DirectoryWatcher*> directories;
   mutable QMutex mutex;
   QTimer poller;
   QThread watcherThread;
   QThread pollerThread;
-
-#ifdef _WIN32
-  WinWatch watcher;
-#endif
-
-  constexpr static int pollInterval = 1000;
 
  private:
   void poll();

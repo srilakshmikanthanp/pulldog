@@ -20,10 +20,9 @@ DWORD CALLBACK Copier::copyFileCallBack(
   HANDLE hDestinationFile,
   LPVOID lpData
 ) {
-  auto copier = reinterpret_cast<Copier *>(lpData);
   auto progress = (static_cast<double>(totalBytesTransferred.QuadPart) / totalFileSize.QuadPart) * 100;
+  auto copier = reinterpret_cast<Copier *>(lpData);
   copier->emit onCopy(copier->transfer, progress);
-
   QMutexLocker locker(&copier->mutex);
 
   // if cancel flag is set return 1 to cancel the copy
@@ -73,7 +72,7 @@ void Copier::start() {
   emit this->onError(msg);
 
   // emit cancel signal
-  emit this->onCopyCancel(transfer);
+  emit this->onCopyFailed(transfer);
 }
 
 /**

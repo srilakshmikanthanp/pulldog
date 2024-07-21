@@ -65,7 +65,9 @@ void DirectoryWatcher::poll() {
   // for removed files
   for(auto it = files.begin(); it != files.end();) {
     if (!fs::exists(it.key().toStdWString())) {
-      auto relPath = fs::relative(it.key().toStdWString(), path.toStdWString());
+      auto keyPath = it.key().toStdWString();
+      auto file = path.toStdWString();
+      auto relPath = fs::relative(keyPath, file);
       auto relStr = QString::fromStdWString(relPath.wstring());
       emit fileRemoved(path, relStr);
       it = files.erase(it);
@@ -81,22 +83,9 @@ void DirectoryWatcher::poll() {
  * @brief Construct a new WinWatch object
  */
 GenericWatch::GenericWatch(QObject *parent) {
-  connect(&watcher, &WinWatch::fileCreated, this, &GenericWatch::fileCreated);
-  connect(&watcher, &WinWatch::fileRemoved, this, &GenericWatch::fileRemoved);
-  connect(&watcher, &WinWatch::fileUpdated, this, &GenericWatch::fileUpdated);
-  connect(&watcher, &WinWatch::fileRename, this, &GenericWatch::fileRename);
-
+  // connects the signals and slots
   connect(&poller, &QTimer::timeout, this, &GenericWatch::poll);
-
-  // move to the thread
-#ifdef _WIN32
-  watcher.moveToThread(&watcherThread);
-  watcherThread.start();
-#endif
-
   poller.moveToThread(&pollerThread);
-
-  // start the poller
   connect(&pollerThread, &QThread::started, [this] {
     poller.start(pollInterval);
   });
@@ -111,7 +100,10 @@ GenericWatch::GenericWatch(QObject *parent) {
 void GenericWatch::poll() {
   QMutexLocker locker(&mutex);
   for(auto directory: directories) {
-    directory->poll();
+    auto dir = QDir(directory->getPath());
+    if(dir.exists()) {
+      directory->poll();
+    }
   }
 }
 
@@ -121,20 +113,16 @@ void GenericWatch::poll() {
  * @param path
  */
 void GenericWatch::addPath(const QString &dir, bool recursive) {
-  DirectoryWatcher *dirWatch = nullptr;
+  DirectoryWatcher* dirWatch = nullptr;
   auto path = QDir::cleanPath(dir);
 
   try {
     dirWatch = new DirectoryWatcher(path);
-  } catch(const std::exception &e) {
+  } catch (const std::exception &e) {
     emit onError(e.what());
     emit pathRemoved(path);
     return;
   }
-
-#ifdef _WIN32
-  this->watcher.addPath(path, recursive);
-#endif
 
   dirWatch->moveToThread(&watcherThread);
 
@@ -155,7 +143,7 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
 
   QMutexLocker locker(&mutex);
   directories.append(dirWatch);
-  emit pathAdded(path);
+  emit pathAdded(QDir::cleanPath(dir));
   locker.unlock();
 }
 
@@ -167,10 +155,6 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
 void GenericWatch::removePath(const QString &dir) {
   QMutexLocker locker(&mutex);
   auto path = QDir::cleanPath(dir);
-
-#ifdef _WIN32
-  watcher.removePath(path);
-#endif
 
   directories.removeIf([path](auto dir) {
     return dir->getPath() == path;

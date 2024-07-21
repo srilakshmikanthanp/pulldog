@@ -57,7 +57,7 @@ class Worker : public QObject {
   void onCopyEnd(const models::Transfer &transfer);
 
  signals:
-  void onCopyCancel(const models::Transfer &transfer);
+  void onCopyFailed(const models::Transfer &transfer);
 
  signals:
   void pathsChanged(const QString &path, bool isAdded);
@@ -75,6 +75,11 @@ class Worker : public QObject {
    * @brief Slot for time process pending file update
    */
   void processPendingFileUpdate();
+
+  /**
+   * @brief slot to handle file rename
+   */
+  void checkAndCopy(const models::Transfer &transfer);
 
   /**
    * @brief slot to handle file rename

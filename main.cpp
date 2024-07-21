@@ -156,13 +156,12 @@ class PullDogApplication : public SingleApplication {
     // set watch list signal to controller
     connect(
       window, &PullDog::onFolderAddRequested,
-      storage, &storage::Storage::addPath
+      [=](const QString &path) { controller->addWatchPath(path); }
     );
 
-    // get watch list signal from controller
     connect(
-      storage, &storage::Storage::onPathAdded,
-      [=](const QString &path) { controller->addWatchPath(path); }
+      controller, &Controller::pathAdded,
+      storage, &storage::Storage::addPath
     );
 
     // on added from controller
@@ -174,17 +173,17 @@ class PullDogApplication : public SingleApplication {
     // remove watch list signal to controller
     connect(
       window, &PullDog::onFolderRemoveRequested,
-      storage, &storage::Storage::removePath
-    );
-
-    connect(
-      storage, &storage::Storage::onPathRemoved,
       [=](const QString &path) { controller->removeWatchPath(path); }
     );
 
     connect(
       controller, &Controller::pathRemoved,
       window, &PullDog::removeWatchPath
+    );
+
+    connect(
+      controller, &Controller::pathRemoved,
+      storage, &storage::Storage::removePath
     );
 
     // on copy start
@@ -207,7 +206,7 @@ class PullDogApplication : public SingleApplication {
 
     // on copy cancel
     connect(
-      controller, &Controller::onCopyCancel,
+      controller, &Controller::onCopyFailed,
       window, &PullDog::removeTransfer
     );
 

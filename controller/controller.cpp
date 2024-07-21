@@ -11,7 +11,9 @@ namespace srilakshmikanthanp::pulldog {
  */
 void Controller::handleFileUpdate(const QString dir, const QString path) {
   // get the destination file path from the destination root
-  auto destFile = destinationRoot.filePath(QFileInfo(dir).fileName() + "/" + path);
+  qDebug() << "File Update: " << destinationRoot << " " << path;
+  auto fileName = QFileInfo(path).fileName();
+  auto destFile = QDir(destinationRoot).filePath(fileName);
   auto srcFile = QDir(dir).filePath(path);
 
   // Create a key for the pending file update
@@ -54,8 +56,8 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   );
 
   connect(
-    &worker, &common::Worker::onCopyCancel,
-    this, &Controller::onCopyCancel
+    &worker, &common::Worker::onCopyFailed,
+    this, &Controller::onCopyFailed
   );
 
   connect(
