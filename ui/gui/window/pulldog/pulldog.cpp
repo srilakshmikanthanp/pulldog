@@ -129,6 +129,7 @@ bool PullDog::removeTransfer(const models::Transfer &transfer) {
   for (auto progress : pullInfo->getProgressList()) {
     if (progress->getTransfer() == transfer) {
       pullInfo->removeProgress(progress);
+      progress->deleteLater();
       found = true;
     }
   }

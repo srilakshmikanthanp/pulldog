@@ -3,13 +3,13 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#include "pullinfo.hpp"
+#include "failedinfo.hpp"
 
 namespace srilakshmikanthanp::pulldog::ui::gui::screens {
 /**
- * @brief Constructor for PullInfo
+ * @brief Constructor for FailedInfo
  */
-PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
+FailedInfo::FailedInfo(QWidget *parent): QWidget(parent) {
   // set the scroll area
   scrollArea->setWidgetResizable(true);
   scrollArea->setWidget(this->scrollAreaWidget);
@@ -21,10 +21,10 @@ PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
   this->scrollAreaWidget->setLayout(this->scrollAreaLayout);
 
   // set center alignment
-  this->noProgress->setAlignment(Qt::AlignCenter);
+  this->noFailures->setAlignment(Qt::AlignCenter);
 
   // set the no progress label
-  this->stackLayout->addWidget(this->noProgress);
+  this->stackLayout->addWidget(this->noFailures);
   this->stackLayout->addWidget(this->scrollArea);
 
   // align top
@@ -35,63 +35,77 @@ PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
 }
 
 /**
- * @brief Destructor for PullInfo
+ * @brief Destructor for FailedInfo
  */
-PullInfo::~PullInfo() {
-  for (auto progress: this->progressList) {
+FailedInfo::~FailedInfo() {
+  for (auto progress: this->failedList) {
     delete progress;
   }
 }
 
-void PullInfo::setUpLanguage() {
-  this->noProgress->setText(tr("All Transfers are Completed"));
+void FailedInfo::setUpLanguage() {
+  this->noFailures->setText(tr("No Failures"));
 }
 
 /**
- * @brief Remove Progress
+ * @brief Remove Tile
  *
  * @param progress
  */
-void PullInfo::removeProgress(components::Progress *progress) {
-  // remove the progress from the layout
-  this->scrollAreaLayout->removeWidget(progress);
+void FailedInfo::removeFailedTile(components::FailedTile *tile) {
+  // remove the tile from the layout
+  this->scrollAreaLayout->removeWidget(tile);
 
-  // remove the progress from the list
-  this->progressList.removeOne(progress);
+  // remove the tile from the list
+  this->failedList.removeOne(tile);
+
+  // disconnect the signal
+  disconnect(
+    tile, &components::FailedTile::onRetryRequested,
+    this, &FailedInfo::onRetryRequested
+  );
 
   // up date the scroll area
   this->update();
 }
 
 /**
- * @brief Add Progress
+ * @brief Add Tile
  *
  * @param progress
  */
-void PullInfo::addProgress(components::Progress *progress) {
+void FailedInfo::addFailedTile(components::FailedTile *tile) {
   // add the progress to the layout
-  this->scrollAreaLayout->insertWidget(0, progress);
+  this->scrollAreaLayout->insertWidget(0, tile);
 
   // add the progress to the list
-  this->progressList.append(progress);
+  this->failedList.append(tile);
+
+  // connect the signal
+  connect(
+    tile, &components::FailedTile::onRetryRequested,
+    [=](models::Transfer transfer) {
+      emit this->onRetryRequested(transfer);
+    }
+  );
 
   // up date the scroll area
   this->update();
 }
 
 /**
- * @brief Get Progress List
+ * @brief Get tile List
  *
- * @return QList<components::Progress *>
+ * @return QList<components::FailedTile *>
  */
-QList<components::Progress *> PullInfo::getProgressList() const {
-  return this->progressList;
+QList<components::FailedTile *> FailedInfo::getFailedTiles() const {
+  return this->failedList;
 }
 
 /**
  * @brief Override the showEvent
  */
-void PullInfo::paintEvent(QPaintEvent *event) {
+void FailedInfo::paintEvent(QPaintEvent *event) {
   // if the vertical layout is empty then add a label
   if (scrollAreaLayout->count() == 0) {
     this->stackLayout->setCurrentIndex(0);
