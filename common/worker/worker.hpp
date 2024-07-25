@@ -60,6 +60,9 @@ class Worker : public QObject {
   void onCopyFailed(const models::Transfer &transfer);
 
  signals:
+  void onCopyCanceled(const models::Transfer &transfer);
+
+ signals:
   void pathsChanged(const QString &path, bool isAdded);
 
  signals:

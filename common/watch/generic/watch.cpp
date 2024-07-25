@@ -118,7 +118,7 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
 
   try {
     dirWatch = new DirectoryWatcher(path);
-  } catch (const std::exception &e) {
+  } catch (const std::filesystem::filesystem_error &e) {
     emit onError(e.what());
     emit pathRemoved(path);
     return;

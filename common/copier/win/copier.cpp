@@ -25,6 +25,18 @@ DWORD CALLBACK Copier::copyFileCallBack(
   copier->emit onCopy(copier->transfer, progress);
   QMutexLocker locker(&copier->mutex);
 
+  // check if handle is valid since the network drive may disconnected
+  BY_HANDLE_FILE_INFORMATION sourceInfo;
+  BY_HANDLE_FILE_INFORMATION destInfo;
+
+  // get the file information
+  if (
+    !GetFileInformationByHandle(hSourceFile, &sourceInfo) ||
+    !GetFileInformationByHandle(hDestinationFile, &destInfo)
+  ) {
+    return PROGRESS_STOP;
+  }
+
   // if cancel flag is set return 1 to cancel the copy
   if (copier->cancelFlag) {
     return PROGRESS_CANCEL;
@@ -63,6 +75,12 @@ void Copier::start() {
     COPY_FILE_RESTARTABLE | COPY_FILE_NO_BUFFERING
   )) {
     emit this->onCopyEnd(transfer);
+    return;
+  }
+
+  // if canceled
+  if (cancelFlag) {
+    emit this->onCopyCanceled(transfer);
     return;
   }
 

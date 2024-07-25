@@ -19,13 +19,18 @@ void Worker::checkAndCopy(const models::Transfer &transfer) {
 
   // on cancel or end start copy
   connect(
-    copier, &common::Copier::onCopyEnd,
-    [this, transfer] { this->copy(transfer); }
+    copier, &common::Copier::onCopyCanceled,
+    [=] { this->copy(transfer); }
   );
 
   connect(
     copier, &common::Copier::onCopyFailed,
-    [this, transfer] { this->copy(transfer); }
+    [=] { this->copy(transfer); }
+  );
+
+  connect(
+    copier, &common::Copier::onCopyEnd,
+    [=] { this->copy(transfer); }
   );
 
   // cancel the copy
@@ -41,7 +46,7 @@ void Worker::copy(const models::Transfer &transfer) {
 
   // create all parent directories
   if(!QDir().mkpath(QFileInfo(destFile).dir().path())) {
-    emit onError("Failed to create parent directories for " + destFile);
+    emit onCopyFailed(transfer);
     return;
   }
 
@@ -65,6 +70,11 @@ void Worker::copy(const models::Transfer &transfer) {
   );
 
   connect(
+    copier, &common::Copier::onCopyCanceled,
+    this, &Worker::onCopyCanceled
+  );
+
+  connect(
     copier, &common::Copier::onCopyFailed,
     this, &Worker::onCopyFailed
   );
@@ -74,22 +84,15 @@ void Worker::copy(const models::Transfer &transfer) {
     this, &Worker::onError
   );
 
-  // to remove the copier from the map
-  connect(
-    copier, &common::Copier::onCopyFailed,
-    [this, transfer, copier]() {
-      copingFiles.remove(transfer);
-      copier->deleteLater();
-    }
-  );
+  const auto cleaner = [this, transfer, copier]() {
+    copingFiles.remove(transfer);
+    copier->deleteLater();
+  };
 
-  connect(
-    copier, &common::Copier::onCopyEnd,
-    [this, transfer, copier]() {
-      copingFiles.remove(transfer);
-      copier->deleteLater();
-    }
-  );
+  // to remove the copier from the map
+  connect(copier, &common::Copier::onCopyCanceled, cleaner);
+  connect(copier, &common::Copier::onCopyEnd, cleaner);
+  connect(copier, &common::Copier::onCopyFailed, cleaner);
 
   // add the copier to the coping files
   copingFiles[transfer] = copier;
@@ -130,8 +133,8 @@ void Worker::process(const models::Transfer &pending) {
 
   // if it is recoverable, continue
   if(status == common::ILocker::Error::UNRECOVERABLE) {
-    emit onError("Failed to lock the file " + srcFile);
     pendingFiles.remove(pending);
+    emit onCopyFailed(pending);
     return;
   }
 

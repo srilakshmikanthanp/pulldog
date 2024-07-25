@@ -56,6 +56,11 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   );
 
   connect(
+    &worker, &common::Worker::onCopyCanceled,
+    this, &Controller::onCopyCanceled
+  );
+
+  connect(
     &worker, &common::Worker::onCopyFailed,
     this, &Controller::onCopyFailed
   );

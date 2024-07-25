@@ -206,6 +206,11 @@ class PullDogApplication : public SingleApplication {
 
     // on copy cancel
     connect(
+      controller, &Controller::onCopyCanceled,
+      window, &PullDog::removeTransfer
+    );
+
+    connect(
       controller, &Controller::onCopyFailed,
       window, &PullDog::removeTransfer
     );
