@@ -11,16 +11,21 @@ namespace srilakshmikanthanp::pulldog::ui::gui::components {
  */
 FailedTile::FailedTile(models::Transfer transfer, QWidget *parent): QWidget(parent), transfer(transfer) {
   // set the layout
-  auto layout = new QVBoxLayout();
+  auto layout = new QHBoxLayout();
 
   // set the label
   label->setText(transfer.getFrom());
 
-  // set the retry button
-  retryButton->setText(tr("Retry"));
+  // set the style
+  retryButton->setIcon(QIcon(":/images/refresh.png"));
+  retryButton->setObjectName("Transparent");
+  retryButton->setCursor(Qt::PointingHandCursor);
 
   // add the label to the layout
   layout->addWidget(label);
+
+  // stretch the layout
+  layout->addStretch();
 
   // add the retry button to the layout
   layout->addWidget(retryButton);
@@ -42,7 +47,7 @@ FailedTile::FailedTile(models::Transfer transfer, QWidget *parent): QWidget(pare
  * @brief Set up the language
  */
 void FailedTile::setupLanguage() {
-  this->retryButton->setText(tr("Retry"));
+
 }
 
 

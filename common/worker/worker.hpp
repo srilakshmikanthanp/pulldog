@@ -116,6 +116,11 @@ class Worker : public QObject {
   void setThreshold(long long threshold);
 
   /**
+   * @brief Retry a transfer
+   */
+  void retryTransfer(const models::Transfer &transfer);
+
+  /**
    * @brief slot to handle file update
    */
   void handleFileUpdate(models::Transfer transfer);

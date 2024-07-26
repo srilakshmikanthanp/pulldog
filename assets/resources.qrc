@@ -10,6 +10,8 @@
   <qresource>
     <file>images/back.png</file>
     <file>images/settings.png</file>
+    <file>images/failed.png</file>
+    <file>images/refresh.png</file>
     <file>images/logo.png</file>
     <file>images/logo.ico</file>
     <file>images/plus.png</file>

@@ -27,12 +27,18 @@ class TitleBar : public QWidget {
 
   QLabel *titleLabel = new QLabel();
   QPushButton *settings  = new QPushButton();
+  QPushButton *failList  = new QPushButton();
 
  signals:
   /**
    * @brief signal to emit when the settings button is clicked
    */
   void settingsClicked();
+
+  /**
+   * @brief signal to emit when the faillist button is clicked
+   */
+  void failListClicked();
 
  public:
 

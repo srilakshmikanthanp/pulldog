@@ -30,15 +30,20 @@ class FailedInfo : public QWidget {
 
  private:
 
-  QStackedLayout *stackLayout = new QStackedLayout(this);
+  QVBoxLayout *mainLayout = new QVBoxLayout(this);
+  QStackedLayout *stackLayout = new QStackedLayout();
   QScrollArea *scrollArea = new QScrollArea();
   QWidget *scrollAreaWidget = new QWidget();
   QLabel *noFailures = new QLabel();
   QVBoxLayout *scrollAreaLayout = new QVBoxLayout();
   QList<components::FailedTile*> failedList;
+  QPushButton *close = new QPushButton();
 
  signals:
   void onRetryRequested(models::Transfer transfer);
+
+ signals:
+  void onCloseClicked();
 
  private:
   void setUpLanguage();

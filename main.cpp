@@ -215,6 +215,19 @@ class PullDogApplication : public SingleApplication {
       window, &PullDog::removeTransfer
     );
 
+    connect(
+      controller, &Controller::onCopyFailed,
+      window, &PullDog::addFailed
+    );
+
+    connect(
+      window, &PullDog::onRetryRequested,
+      [=] (models::Transfer transfer) {
+        controller->retryTransfer(transfer);
+        window->removeFailed(transfer);
+      }
+    );
+
     // show tray icon
     trayIcon->show();
   }

@@ -161,6 +161,15 @@ QStringList Controller::watchPaths() const {
 }
 
 /**
+ * @brief Retry a transfer
+ */
+void Controller::retryTransfer(const models::Transfer &transfer) {
+  QMetaObject::invokeMethod(
+    &worker, [=] { this->worker.retryTransfer(transfer); }
+  );
+}
+
+/**
  * @brief Remove a path from watch
  */
 void Controller::removeWatchPath(const QString &path) {

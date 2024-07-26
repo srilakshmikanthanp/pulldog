@@ -28,7 +28,7 @@ class PullInfo : public QWidget {
 
  private:
 
-  QStackedLayout *stackLayout = new QStackedLayout(this);
+  QStackedLayout *stackLayout = new QStackedLayout();
   QScrollArea *scrollArea = new QScrollArea();
   QWidget *scrollAreaWidget = new QWidget();
   QLabel *noProgress = new QLabel();

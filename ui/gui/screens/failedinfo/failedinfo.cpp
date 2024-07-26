@@ -10,6 +10,16 @@ namespace srilakshmikanthanp::pulldog::ui::gui::screens {
  * @brief Constructor for FailedInfo
  */
 FailedInfo::FailedInfo(QWidget *parent): QWidget(parent) {
+  // Create a horizontal layout
+  QHBoxLayout *hLayout = new QHBoxLayout;
+
+  // Add the close button to the horizontal layout with left alignment
+  hLayout->addWidget(this->close, 0, Qt::AlignLeft);
+
+  // add the layout to the main layout
+  this->mainLayout->addLayout(hLayout);
+  this->mainLayout->addLayout(stackLayout);
+
   // set the scroll area
   scrollArea->setWidgetResizable(true);
   scrollArea->setWidget(this->scrollAreaWidget);
@@ -30,8 +40,19 @@ FailedInfo::FailedInfo(QWidget *parent): QWidget(parent) {
   // align top
   scrollAreaLayout->setAlignment(Qt::AlignTop);
 
+  // Add close button to the layout
+  this->close->setIcon(QIcon(":/images/back.png"));
+  this->close->setObjectName("Transparent");
+  this->close->setCursor(Qt::PointingHandCursor);
+
   // set the language
   this->setUpLanguage();
+
+  // connect signal
+  connect(
+    this->close, &QPushButton::clicked,
+    [=] { emit this->onCloseClicked(); }
+  );
 }
 
 /**

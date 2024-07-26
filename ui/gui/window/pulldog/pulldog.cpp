@@ -28,6 +28,9 @@ PullDog::PullDog(Controller *controller, QWidget *parent): QWidget(parent), cont
   // add the settings widget to the stacked widget
   stackedWidget->addWidget(settings);
 
+  // add the failed info widget to the stacked widget
+  stackedWidget->addWidget(failedInfo);
+
   // create the final layout
   auto layout = new QVBoxLayout();
 
@@ -43,9 +46,21 @@ PullDog::PullDog(Controller *controller, QWidget *parent): QWidget(parent), cont
     [this] { stackedWidget->setCurrentIndex(1); }
   );
 
+  // on failed list clicked
+  connect(
+    titleBar, &components::TitleBar::failListClicked,
+    [this] { stackedWidget->setCurrentIndex(2); }
+  );
+
   // on close
   connect(
     settings, &screens::Settings::onCloseClicked,
+    [this] { stackedWidget->setCurrentIndex(0); }
+  );
+
+  // on close
+  connect(
+    failedInfo, &screens::FailedInfo::onCloseClicked,
     [this] { stackedWidget->setCurrentIndex(0); }
   );
 
@@ -135,6 +150,37 @@ bool PullDog::removeTransfer(const models::Transfer &transfer) {
   }
 
   // if not found
+  return found;
+}
+
+/**
+ * @brief Add a File Transfer
+ */
+void PullDog::addFailed(const models::Transfer &transfer) {
+  auto failedTile = new components::FailedTile(transfer, this);
+
+  connect(
+    failedTile, &components::FailedTile::onRetryRequested,
+    this, &PullDog::onRetryRequested
+  );
+
+  failedInfo->addFailedTile(failedTile);
+}
+
+/**
+ * @brief Remove a File Transfer
+ */
+bool PullDog::removeFailed(const models::Transfer &transfer) {
+  bool found = false;
+
+  for (auto failedTile : failedInfo->getFailedTiles()) {
+    if (failedTile->getTransfer() == transfer) {
+      failedInfo->removeFailedTile(failedTile);
+      failedTile->deleteLater();
+      found = true;
+    }
+  }
+
   return found;
 }
 

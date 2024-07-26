@@ -115,6 +115,11 @@ class Controller : public QObject {
   void removeWatchPath(const QString &path);
 
   /**
+   * @brief Retry a transfer
+   */
+  void retryTransfer(const models::Transfer &transfer);
+
+  /**
    * @brief Add a path to watch
    */
   void addWatchPath(const QString &path, bool recursive = true);

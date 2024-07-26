@@ -210,6 +210,14 @@ void Worker::setThreshold(long long threshold) {
   timer.setInterval((this->threshold = threshold) / 2);
 }
 
+
+/**
+ * @brief Retry a transfer
+ */
+void Worker::retryTransfer(const models::Transfer &transfer) {
+  this->checkAndCopy(transfer);
+}
+
 /**
  * @brief slot to handle file update
  */

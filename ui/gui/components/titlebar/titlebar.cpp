@@ -17,6 +17,7 @@ TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *layout = new QHBoxLayout();
   layout->addWidget(titleLabel);
   layout->addStretch();
+  layout->addWidget(failList);
   layout->addWidget(settings);
 
   // set the style
@@ -24,10 +25,20 @@ TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
   settings->setObjectName("Transparent");
   settings->setCursor(Qt::PointingHandCursor);
 
+  // set the style
+  failList->setIcon(QIcon(":/images/failed.png"));
+  failList->setObjectName("Transparent");
+  failList->setCursor(Qt::PointingHandCursor);
+
   // connect the signals
   connect(
     settings, &QPushButton::clicked,
     this, &TitleBar::settingsClicked
+  );
+
+  connect(
+    failList, &QPushButton::clicked,
+    this, &TitleBar::failListClicked
   );
 
   // set up language

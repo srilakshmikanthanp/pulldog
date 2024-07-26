@@ -10,6 +10,8 @@ namespace srilakshmikanthanp::pulldog::ui::gui::screens {
  * @brief Constructor for PullInfo
  */
 PullInfo::PullInfo(QWidget *parent): QWidget(parent) {
+  this->setLayout(this->stackLayout);
+
   // set the scroll area
   scrollArea->setWidgetResizable(true);
   scrollArea->setWidget(this->scrollAreaWidget);
