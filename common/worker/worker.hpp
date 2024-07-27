@@ -13,6 +13,7 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QList>
+#include <QQueue>
 #include <QSharedPointer>
 #include <QTimer>
 #include <QDirIterator>
@@ -29,8 +30,8 @@ class Worker : public QObject {
   // Currently Coping files with copier object
   QMap<models::Transfer, common::Copier*> copingFiles;
 
-  // Pending file update with last update time
-  QMap<models::Transfer, long long> pendingFiles;
+  // Pending file update
+  QQueue<models::Transfer> pendingFiles;
 
   // timer for checking pending file update
   QTimer timer;
@@ -43,6 +44,14 @@ class Worker : public QObject {
 
   // maximum concurrent copies
   int concurrentCopies = 20;
+
+  // process status
+  enum class ProcessStatus {
+    Success,
+    Retry,
+    Directory,
+    Error,
+  };
 
  private:  // Just for qt
   Q_OBJECT
@@ -72,7 +81,7 @@ class Worker : public QObject {
   /**
    * @brief Process the pending file update
    */
-  void process(const models::Transfer &transfer);
+  ProcessStatus process(const models::Transfer &transfer);
 
   /**
    * @brief Slot for time process pending file update
@@ -88,11 +97,6 @@ class Worker : public QObject {
    * @brief slot to handle file rename
    */
   void copy(const models::Transfer &transfer);
-
-  /**
-   * @brief Is dest file upto date
-   */
-  bool isUptoDate(const models::Transfer &transfer);
 
  public:
   /**

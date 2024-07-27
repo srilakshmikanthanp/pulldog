@@ -51,7 +51,7 @@ void Worker::copy(const models::Transfer &transfer) {
   }
 
   // create a copier object
-  auto copier = new common::Copier(transfer, this);
+  auto copier = new common::Copier(transfer);
 
   // connect the signals
   connect(
@@ -104,17 +104,16 @@ void Worker::copy(const models::Transfer &transfer) {
 }
 
 /**
- * @brief Process the pending file update
+ * @brief Process the pending file update and return the status
  */
-void Worker::process(const models::Transfer &pending) {
+Worker::ProcessStatus Worker::process(const models::Transfer &pending) {
   // extract the source and destination file
   auto srcFile = pending.getFrom();
   auto srcInfo = QFileInfo(srcFile);
 
   // ignore if it is not exists or it is a directory
-  if(!srcInfo.exists() || srcInfo.isDir()) {
-    pendingFiles.remove(pending);
-    return;
+  if(srcInfo.isDir()) {
+    return ProcessStatus::Directory;
   }
 
   // create an locker object
@@ -125,23 +124,18 @@ void Worker::process(const models::Transfer &pending) {
   // lock
   auto status = locker.tryLock();
 
-  // if it is recoverable, continue
+  // if it is non recoverable
   if(status == common::ILocker::Error::UNRECOVERABLE) {
-    pendingFiles.remove(pending);
-    emit onCopyFailed(pending);
-    return;
+    return ProcessStatus::Error;
   }
 
-  // if it is recoverable, continue
+  // if it is recoverable
   if(status == common::ILocker::Error::RECOVERABLE) {
-    return;
+    return ProcessStatus::Retry;
   }
 
   // unlock the file
   locker.unlock();
-
-  // remove the pending file update
-  pendingFiles.remove(pending);
 
   // do copy
   this->checkAndCopy(pending);
@@ -151,11 +145,26 @@ void Worker::process(const models::Transfer &pending) {
  * @brief Process the pending file update
  */
 void Worker::processPendingFileUpdate() {
-  QMutexLocker locker(&mutex); // lock the mutex
-  auto keys = pendingFiles.keys();
-  for(auto pending: keys) {
-    process(pending);
+  // failed files but we can retry again
+  QQueue<models::Transfer> failed;
+
+  // lock the mutex for pending files
+  QMutexLocker locker(&mutex);
+
+  // process files
+  for (auto pending: pendingFiles) {
+    switch (this->process(pending)) {
+    case ProcessStatus::Error:
+      emit onCopyFailed(pending);
+      break;
+    case ProcessStatus::Retry:
+      failed.enqueue(pending);
+      break;
+    }
   }
+
+  // swap the failed files
+  pendingFiles.swap(failed);
 }
 
 Worker::Worker(QObject *parent) : QObject(parent) {
@@ -195,7 +204,6 @@ void Worker::retryTransfer(const models::Transfer &transfer) {
  */
 void Worker::handleFileUpdate(models::Transfer transfer) {
   QMutexLocker locker(&mutex);
-  auto time = QDateTime::currentMSecsSinceEpoch();
-  pendingFiles[transfer] = time;
+  pendingFiles.enqueue(transfer);
 }
 } // namespace srilakshmikanthanp::pulldog::common
