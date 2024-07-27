@@ -82,7 +82,7 @@ class Controller : public QObject {
   /**
    * @brief Destroy the Controller object
    */
-  ~Controller() = default;
+  ~Controller();
 
   /**
    * @brief get the destination root

@@ -17,11 +17,12 @@ class Storage : public QObject {
   QSettings *settings = new QSettings("srilakshmikanthanp", "pulldog");
 
  private: // groups
-  const char* filesGroup  = "files";
+  const QString downloadGroup = "download";
+  const QString watchGroup  = "files";
 
  private: // keys
-  const char* downloadPath = "downloadPath";
-  const char* paths = "paths";
+  const QString downloadPath = "downloadPath";
+  const QString paths = "paths";
 
  signals:
   void onDownloadPathChanged(const QString& path);

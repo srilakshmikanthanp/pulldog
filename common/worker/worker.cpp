@@ -139,6 +139,9 @@ Worker::ProcessStatus Worker::process(const models::Transfer &pending) {
 
   // do copy
   this->checkAndCopy(pending);
+
+  // return success
+  return ProcessStatus::Success;
 }
 
 /**

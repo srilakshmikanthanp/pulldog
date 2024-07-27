@@ -115,6 +115,16 @@ Controller::Controller(QObject *parent) : QObject(parent) {
 }
 
 /**
+ * @brief Destroy the Controller object
+ */
+Controller::~Controller() {
+  for(auto thread: {&watcherThread, &workerThread}) {
+    thread->quit();
+    thread->wait();
+  }
+}
+
+/**
  * @brief get the destination root
  */
 QString Controller::getDestinationRoot() const {

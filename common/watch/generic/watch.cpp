@@ -85,13 +85,32 @@ void DirectoryWatcher::poll() {
 GenericWatch::GenericWatch(QObject *parent) {
   // connects the signals and slots
   connect(&poller, &QTimer::timeout, this, &GenericWatch::poll);
+
+  // move the poller to the thread
   poller.moveToThread(&pollerThread);
+
+  // start timer after the thread started
   connect(&pollerThread, &QThread::started, [this] {
     poller.start(pollInterval);
   });
 
+  // stop timer before the thread finished
+  connect(&pollerThread, &QThread::finished, [this] {
+    poller.stop();
+  });
+
   // start the thread's
   pollerThread.start();
+}
+
+/**
+ * @brief Destroy
+ */
+GenericWatch::~GenericWatch() {
+  for (auto thread: {&watcherThread, &pollerThread}) {
+    thread->quit();
+    thread->wait();
+  }
 }
 
 /**
@@ -124,6 +143,11 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
     return;
   }
 
+  connect(
+    &this->watcherThread, &QThread::finished,
+    dirWatch, &QObject::deleteLater
+  );
+
   dirWatch->moveToThread(&watcherThread);
 
   connect(
@@ -153,13 +177,11 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
  * @param path
  */
 void GenericWatch::removePath(const QString &dir) {
-  QMutexLocker locker(&mutex);
   auto path = QDir::cleanPath(dir);
-
+  QMutexLocker locker(&mutex);
   directories.removeIf([path](auto dir) {
     return dir->getPath() == path;
   });
-
   emit pathRemoved(path);
 }
 

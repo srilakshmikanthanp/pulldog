@@ -32,7 +32,6 @@ class DirectoryWatcher : public QObject {
  private:
   QMap<QString, QFileInfo> files;
 
-
  signals:
   void fileCreated(const QString &dir, const QString &file);
   void fileRemoved(const QString &dir, const QString &file);
@@ -94,7 +93,7 @@ class GenericWatch : public IWatch {
   /**
    * @brief Destroy the Watch object
    */
-  ~GenericWatch() override = default;
+  ~GenericWatch();
 
   /**
    * @brief Remove a path from watch
