@@ -65,6 +65,11 @@ class Copier : public ICopier {
    */
   void cancel() override;
 
+  /**
+   * @brief is Cancelled
+   */
+  bool isCancelled() const;
+
  private:
   /**
    * @brief Copy file call back from CopyFileEx

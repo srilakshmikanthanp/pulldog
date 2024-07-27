@@ -37,7 +37,10 @@ class Worker : public QObject {
   QTimer timer;
 
   // mutex for updating pending file
-  QMutex mutex;
+  QMutex pendingMutex;
+
+  // mutex for coping file
+  QMutex copingMutex;
 
   // waiting threshold for coping file
   long long threshold = 5000;
@@ -92,11 +95,6 @@ class Worker : public QObject {
    * @brief slot to handle file rename
    */
   void checkAndCopy(const models::Transfer &transfer);
-
-  /**
-   * @brief slot to handle file rename
-   */
-  void copy(const models::Transfer &transfer);
 
  public:
   /**

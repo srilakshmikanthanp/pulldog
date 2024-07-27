@@ -10,44 +10,28 @@ namespace srilakshmikanthanp::pulldog::common {
  * @brief start to Copy the file with copier object
  */
 void Worker::checkAndCopy(const models::Transfer &transfer) {
-  if(!copingFiles.contains(transfer)) {
-    this->copy(transfer);
-    return;
+  // create all parent directories
+  if(!QDir().mkpath(QFileInfo(transfer.getTo()).dir().path())) {
+    return emit onCopyFailed(transfer);
   }
 
-  auto copier = copingFiles[transfer];
+  // lock the mutex
+  QMutexLocker locker(&copingMutex);
 
-  // on cancel or end start copy
-  connect(
-    copier, &common::Copier::onCopyCanceled,
-    [=] { this->copy(transfer); }
-  );
+  // if already coping
+  if(copingFiles.contains(transfer)) {
+    auto action = [=] { this->checkAndCopy(transfer); };
+    auto copier = copingFiles[transfer];
 
-  connect(
-    copier, &common::Copier::onCopyEnd,
-    [=] { this->copy(transfer); }
-  );
+    if(copier->isCancelled()) {
+      return;
+    }
 
-  connect(
-    copier, &common::Copier::onCopyFailed,
-    [=] { this->copy(transfer); }
-  );
+    connect(copier, &common::Copier::onCopyCanceled, action);
+    connect(copier, &common::Copier::onCopyEnd, action);
+    connect(copier, &common::Copier::onCopyFailed, action);
 
-  // cancel the copy
-  copier->cancel();
-}
-
-/**
- * @brief slot to handle file rename
- */
-void Worker::copy(const models::Transfer &transfer) {
-  auto srcFile = transfer.getFrom();
-  auto destFile = transfer.getTo();
-
-  // create all parent directories
-  if(!QDir().mkpath(QFileInfo(destFile).dir().path())) {
-    emit onCopyFailed(transfer);
-    return;
+    return copier->cancel();
   }
 
   // create a copier object
@@ -84,9 +68,11 @@ void Worker::copy(const models::Transfer &transfer) {
     this, &Worker::onError
   );
 
+  // cleaner for the copier
   const auto cleaner = [this, transfer, copier]() {
-    copingFiles.remove(transfer);
+    QMutexLocker locker(&copingMutex);
     copier->deleteLater();
+    copingFiles.remove(transfer);
   };
 
   // to remove the copier from the map
@@ -97,8 +83,8 @@ void Worker::copy(const models::Transfer &transfer) {
   // add the copier to the coping files
   copingFiles[transfer] = copier;
 
-  // start the copier on thread pool
-  QThreadPool::globalInstance()->start([copier]() {
+  // start the copy
+  return QThreadPool::globalInstance()->start([copier] {
     copier->start();
   });
 }
@@ -148,20 +134,17 @@ Worker::ProcessStatus Worker::process(const models::Transfer &pending) {
  * @brief Process the pending file update
  */
 void Worker::processPendingFileUpdate() {
-  // failed files but we can retry again
+  // lock the mutex for pending files
+  QMutexLocker locker(&pendingMutex);
   QQueue<models::Transfer> failed;
 
-  // lock the mutex for pending files
-  QMutexLocker locker(&mutex);
-
-  // process files
   for (auto pending: pendingFiles) {
     switch (this->process(pending)) {
-    case ProcessStatus::Error:
-      emit onCopyFailed(pending);
-      break;
     case ProcessStatus::Retry:
       failed.enqueue(pending);
+      break;
+    case ProcessStatus::Error:
+      emit onCopyFailed(pending);
       break;
     }
   }
@@ -206,7 +189,8 @@ void Worker::retryTransfer(const models::Transfer &transfer) {
  * @brief slot to handle file update
  */
 void Worker::handleFileUpdate(models::Transfer transfer) {
-  QMutexLocker locker(&mutex);
+  QMutexLocker locker(&pendingMutex);
   pendingFiles.enqueue(transfer);
+  locker.unlock();
 }
 } // namespace srilakshmikanthanp::pulldog::common

@@ -105,4 +105,11 @@ void Copier::cancel() {
     this->cancelFlag = true;
   }
 }
+
+/**
+ * @brief Is Cancelled
+ */
+bool Copier::isCancelled() const {
+  return cancelFlag;
+}
 } // namespace srilakshmikanthanp::pulldog::common

@@ -65,5 +65,10 @@ class ICopier : public QObject {
    * @brief Cancel the copy
    */
   virtual void cancel() = 0;
+
+  /**
+   * @brief is Cancelled
+   */
+  virtual bool isCancelled() const = 0;
 };
 }  // namespace srilakshmikanthanp::pulldog::common::copier
