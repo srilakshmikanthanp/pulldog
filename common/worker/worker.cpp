@@ -24,12 +24,12 @@ void Worker::checkAndCopy(const models::Transfer &transfer) {
   );
 
   connect(
-    copier, &common::Copier::onCopyFailed,
+    copier, &common::Copier::onCopyEnd,
     [=] { this->copy(transfer); }
   );
 
   connect(
-    copier, &common::Copier::onCopyEnd,
+    copier, &common::Copier::onCopyFailed,
     [=] { this->copy(transfer); }
   );
 
@@ -117,12 +117,6 @@ void Worker::process(const models::Transfer &pending) {
     return;
   }
 
-  // if it is upto date, remove the pending file update
-  if (isUptoDate(pending)) {
-    pendingFiles.remove(pending);
-    return;
-  }
-
   // create an locker object
   common::Locker locker(
     srcFile, types::LockMode::EXCLUSIVE, types::LockType::READ
@@ -151,28 +145,6 @@ void Worker::process(const models::Transfer &pending) {
 
   // do copy
   this->checkAndCopy(pending);
-}
-
-/**
- * @brief Is dest file upto date
- */
-bool Worker::isUptoDate(const models::Transfer &transfer) {
-  // if dest file not exists return false
-  if(!QFileInfo(transfer.getTo()).exists()) {
-    return false;
-  }
-
-  // get the last update time of src and first create time of dest
-  auto srcInfo   = QFileInfo(transfer.getFrom());
-  auto destInfo  = QFileInfo(transfer.getTo());
-  auto srcLast   = srcInfo.lastModified().toUTC();
-  auto destFirst = destInfo.birthTime().toUTC();
-  auto srcSize   = srcInfo.size();
-  auto destSize  = destInfo.size();
-
-  // if dest file exists and its created time is
-  // greater than the last update of src file
-  return  destFirst >= srcLast && srcSize == destSize;
 }
 
 /**

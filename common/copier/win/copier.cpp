@@ -72,7 +72,9 @@ void Copier::start() {
     copyFileCallBack,
     this,
     &cancelFlag,
-    COPY_FILE_RESTARTABLE | COPY_FILE_NO_BUFFERING
+    COPY_FILE_RESTARTABLE     |
+    COPY_FILE_NO_BUFFERING    |
+    COPY_FILE_FAIL_IF_EXISTS
   )) {
     emit this->onCopyEnd(transfer);
     return;
@@ -88,6 +90,13 @@ void Copier::start() {
   auto error = GetLastError();
   auto msg = QString("Failed copy %1 to %2 : %3").arg(transfer.getFrom(), transfer.getTo(), QString::number(error));
   emit this->onError(msg);
+
+  // if error code is 183 then file already exists
+  if (error == 183) {
+    emit this->onCopy(transfer, 100);
+    emit this->onCopyEnd(transfer);
+    return;
+  }
 
   // emit cancel signal
   emit this->onCopyFailed(transfer);
