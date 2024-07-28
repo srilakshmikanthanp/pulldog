@@ -37,13 +37,13 @@ class PullDog : public QWidget {
   Controller *controller;
 
  private:
-  int maxProgressHistory = 10;
 
- signals:
-  /**
-   * @brief On Destination Root Changed
-   */
-  void destinationPathChanged(QString destRoot);
+  QHash<models::Transfer, components::FailedTile*> failures;
+  QHash<models::Transfer, components::Progress*> transfers;
+
+ private:
+
+  qsizetype historyHint = 10;
 
  signals:
   /**
@@ -53,16 +53,16 @@ class PullDog : public QWidget {
 
  signals:
   /**
+   * @brief On Destination Root Changed
+   */
+  void destinationPathChanged(QString destRoot);
+
+ signals:
+  /**
    * @brief Retry Requested
    */
   void onRetryRequested(models::Transfer transfer);
 
- private:
-  /**
-   * @brief Function helps to maintain history of progress
-   * but not more than maxProgressHistory
-   */
-  void maintainProgressHistory();
 
  signals:
   /**
@@ -80,26 +80,6 @@ class PullDog : public QWidget {
    * @brief Destroy the Pull Dog object
    */
   ~PullDog() = default;
-
-  /**
-   * @brief Add a File Transfer
-   */
-  void addTransfer(const models::Transfer &transfer);
-
-  /**
-   * @brief Remove a File Transfer
-   */
-  bool removeTransfer(const models::Transfer &transfer);
-
-  /**
-   * @brief Add a File Transfer
-   */
-  void addFailed(const models::Transfer &transfer);
-
-  /**
-   * @brief Remove a File Transfer
-   */
-  bool removeFailed(const models::Transfer &transfer);
 
   /**
    * @brief Set the Watch List
@@ -127,14 +107,34 @@ class PullDog : public QWidget {
   QString getDestinationRoot() const;
 
   /**
-   * @brief Set max Progress History
+   * @brief set history hint
    */
-  void setMaxProgressHistory(int maxProgressHistory);
+  void setHistoryHint(qsizetype hint);
 
   /**
-   * @brief Get max Progress History
+   * @brief get history hint
    */
-  int getMaxProgressHistory() const;
+  qsizetype getHistoryHint() const;
+
+  /**
+   * @brief Add a File Transfer
+   */
+  void addTransfer(const models::Transfer &transfer);
+
+  /**
+   * @brief Remove a File Transfer
+   */
+  bool removeTransfer(const models::Transfer &transfer);
+
+  /**
+   * @brief Add a File Transfer
+   */
+  void addFailed(const models::Transfer &transfer);
+
+  /**
+   * @brief Remove a File Transfer
+   */
+  bool removeFailed(const models::Transfer &transfer);
 
   /**
    * @brief Handle End

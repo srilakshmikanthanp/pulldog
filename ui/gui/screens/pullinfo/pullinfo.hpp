@@ -33,7 +33,6 @@ class PullInfo : public QWidget {
   QWidget *scrollAreaWidget = new QWidget();
   QLabel *noProgress = new QLabel();
   QVBoxLayout *scrollAreaLayout = new QVBoxLayout();
-  QList<components::Progress *> progressList;
 
  private:
   void setUpLanguage();
@@ -50,7 +49,7 @@ class PullInfo : public QWidget {
   /**
    * @brief Destroy the Pull Info object
    */
-  ~PullInfo();
+  ~PullInfo() = default;
 
   /**
    * @brief Remove Progress

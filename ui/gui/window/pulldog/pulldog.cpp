@@ -38,7 +38,13 @@ PullDog::PullDog(Controller *controller, QWidget *parent): QWidget(parent), cont
   layout->addWidget(stackedWidget);
 
   // set the layout
-  setLayout(layout);
+  this->setLayout(layout);
+
+  // connect removed
+  connect(
+    settings, &screens::Settings::onFolderRemoveRequested,
+    this, &PullDog::onFolderRemoveRequested
+  );
 
   // on settings clicked
   connect(
@@ -70,118 +76,11 @@ PullDog::PullDog(Controller *controller, QWidget *parent): QWidget(parent), cont
     this, &PullDog::onFolderAddRequested
   );
 
-  // connect removed
-  connect(
-    settings, &screens::Settings::onFolderRemoveRequested,
-    this, &PullDog::onFolderRemoveRequested
-  );
-
   // connect destination path changed
   connect(
     settings, &screens::Settings::destinationPathChanged,
     this, &PullDog::destinationPathChanged
   );
-}
-
-/**
- * @brief Function helps to maintain history of progress
- * but not more than maxProgressHistory
- */
-void PullDog::maintainProgressHistory() {
-  // if progress list is less than maxProgressHistory
-  if (pullInfo->getProgressList().size() < maxProgressHistory) {
-    return;
-  }
-
-  // get the progress list
-  auto list = pullInfo->getProgressList();
-
-  // number of extra progress
-  auto extraProgress = list.size() - maxProgressHistory;
-
-  // if any finished progress found remove it reversed
-  for (auto progress = list.rbegin(); progress != list.rend(); progress++) {
-    if ((*progress)->isFinished() && extraProgress > 0) {
-      pullInfo->removeProgress(*progress);
-      extraProgress--;
-    }
-
-    if (extraProgress == 0) {
-      break;
-    }
-  }
-}
-
-/**
- * @brief On Progress Changed
- */
-void PullDog::onProgressChanged(models::Transfer transfer, double progress) {
-  auto progressList = pullInfo->getProgressList();
-
-  for (auto p : progressList) {
-    if (p->getTransfer() == transfer) {
-      p->setProgress(progress);
-      return;
-    }
-  }
-}
-
-/**
- * @brief Add a File Transfer
- */
-void PullDog::addTransfer(const models::Transfer &transfer) {
-  auto progress = new components::Progress(transfer, this);
-  removeTransfer(transfer);
-  pullInfo->addProgress(progress);
-}
-
-/**
- * @brief Remove a File Transfer
- */
-bool PullDog::removeTransfer(const models::Transfer &transfer) {
-  bool found = false;
-
-  for (auto progress : pullInfo->getProgressList()) {
-    if (progress->getTransfer() == transfer) {
-      pullInfo->removeProgress(progress);
-      progress->deleteLater();
-      found = true;
-    }
-  }
-
-  // if not found
-  return found;
-}
-
-/**
- * @brief Add a File Transfer
- */
-void PullDog::addFailed(const models::Transfer &transfer) {
-  auto failedTile = new components::FailedTile(transfer, this);
-
-  connect(
-    failedTile, &components::FailedTile::onRetryRequested,
-    this, &PullDog::onRetryRequested
-  );
-
-  failedInfo->addFailedTile(failedTile);
-}
-
-/**
- * @brief Remove a File Transfer
- */
-bool PullDog::removeFailed(const models::Transfer &transfer) {
-  bool found = false;
-
-  for (auto failedTile : failedInfo->getFailedTiles()) {
-    if (failedTile->getTransfer() == transfer) {
-      failedInfo->removeFailedTile(failedTile);
-      failedTile->deleteLater();
-      found = true;
-    }
-  }
-
-  return found;
 }
 
 /**
@@ -220,29 +119,93 @@ QString PullDog::getDestinationRoot() const {
 }
 
 /**
- * @brief Set max Progress History
+ * @brief set history hint
  */
-void PullDog::setMaxProgressHistory(int maxProgressHistory) {
-  this->maxProgressHistory = maxProgressHistory;
+void PullDog::setHistoryHint(qsizetype hint) {
+  this->historyHint = hint;
 }
 
 /**
- * @brief Get max Progress History
+ * @brief get history hint
  */
-int PullDog::getMaxProgressHistory() const {
-  return maxProgressHistory;
+qsizetype PullDog::getHistoryHint() const {
+  return this->historyHint;
+}
+
+/**
+ * @brief Add a File Transfer
+ */
+void PullDog::addTransfer(const models::Transfer &transfer) {
+  auto progress = new components::Progress(transfer, this);
+  this->removeTransfer(transfer);
+  pullInfo->addProgress(progress);
+  this->transfers[transfer] = progress;
+}
+
+/**
+ * @brief On Progress Changed
+ */
+void PullDog::onProgressChanged(models::Transfer transfer, double progress) {
+  if (this->transfers.contains(transfer)) {
+    this->transfers[transfer]->setProgress(progress);
+  }
+}
+
+/**
+ * @brief Remove a File Transfer
+ */
+bool PullDog::removeTransfer(const models::Transfer &transfer) {
+  if (!this->transfers.contains(transfer)) {
+    return false;
+  }
+
+  auto progress = this->transfers[transfer];
+  this->transfers.remove(transfer);
+  pullInfo->removeProgress(progress);
+  progress->deleteLater();
+
+  return true;
+}
+
+/**
+ * @brief Add a File Transfer
+ */
+void PullDog::addFailed(const models::Transfer &transfer) {
+  using FailedTile = components::FailedTile;
+  auto tile = new FailedTile(transfer, this);
+  connect(tile, &FailedTile::onRetryRequested, this, &PullDog::onRetryRequested);
+  failedInfo->addFailedTile(tile);
+  this->failures[transfer] = tile;
+}
+
+/**
+ * @brief Remove a File Transfer
+ */
+bool PullDog::removeFailed(const models::Transfer &transfer) {
+  if (!this->failures.contains(transfer)) {
+    return false;
+  }
+
+  auto tile = this->failures[transfer];
+  this->failures.remove(transfer);
+  failedInfo->removeFailedTile(tile);
+  tile->deleteLater();
+
+  return true;
 }
 
 /**
  * @brief Handle End
  */
 void PullDog::onCopyEnd(const models::Transfer &transfer) {
-  for (auto progress : pullInfo->getProgressList()) {
-    if (progress->getTransfer() == transfer) {
-      progress->setProgress(100);
-      maintainProgressHistory();
-      return;
-    }
+  if (!this->transfers.contains(transfer)) {
+    return;
+  }
+
+  auto progress = this->transfers[transfer];
+  progress->setProgress(100);
+  if (transfers.size() >= historyHint) {
+    this->removeTransfer(transfer);
   }
 }
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::window

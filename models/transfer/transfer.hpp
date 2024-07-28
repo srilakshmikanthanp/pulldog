@@ -52,9 +52,14 @@ class Transfer {
 };
 }  // namespace srilakshmikanthanp::pulldog::models
 
+namespace std {
 /**
- * @brief Hash function for Transfer Qt qHash
+ * @brief Hash function for Transfer std hash
  */
-inline size_t qHash(const srilakshmikanthanp::pulldog::models::Transfer &transfer) {
-  return qHash(transfer.getFrom()) ^ qHash(transfer.getTo());
-}
+template <>
+struct hash<srilakshmikanthanp::pulldog::models::Transfer> {
+  size_t operator()(const srilakshmikanthanp::pulldog::models::Transfer &transfer) const {
+    return qHash(transfer.getFrom()) ^ qHash(transfer.getTo());
+  }
+};
+}  // namespace std

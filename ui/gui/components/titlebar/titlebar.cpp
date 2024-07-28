@@ -10,16 +10,6 @@ namespace srilakshmikanthanp::pulldog::ui::gui::components {
  * @brief Construct a new TitleBar object
  */
 TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
-  // style
-  titleLabel->setObjectName("Title");
-
-  // set the layout
-  QHBoxLayout *layout = new QHBoxLayout();
-  layout->addWidget(titleLabel);
-  layout->addStretch();
-  layout->addWidget(failList);
-  layout->addWidget(settings);
-
   // set the style
   settings->setIcon(QIcon(":/images/settings.png"));
   settings->setObjectName("Transparent");
@@ -29,6 +19,15 @@ TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
   failList->setIcon(QIcon(":/images/failed.png"));
   failList->setObjectName("Transparent");
   failList->setCursor(Qt::PointingHandCursor);
+
+  // set the layout
+  QHBoxLayout *layout = new QHBoxLayout();
+  layout->addStretch();
+  layout->addWidget(failList);
+  layout->addWidget(settings);
+
+  // set the layout
+  this->setLayout(layout);
 
   // connect the signals
   connect(
@@ -43,15 +42,12 @@ TitleBar::TitleBar(QWidget *parent) : QWidget(parent) {
 
   // set up language
   this->setupLanguage();
-
-  // set the layout
-  this->setLayout(layout);
 }
 
 /**
  * @brief set up Language
  */
 void TitleBar::setupLanguage() {
-  titleLabel->setText(tr("Pulldog"));
+
 }
 }

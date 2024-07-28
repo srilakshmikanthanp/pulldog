@@ -10,7 +10,7 @@ namespace srilakshmikanthanp::pulldog::common {
  * @brief Construct a Directory Watcher object
  */
 DirectoryWatcher::DirectoryWatcher(const QString &path, QObject *parent): QObject(parent), path(path) {
-  for(const auto &file: std::filesystem::recursive_directory_iterator(path.toStdString())) {
+  for(const auto &file: std::filesystem::recursive_directory_iterator(path.toStdWString())) {
     auto fileInfo = QFileInfo(QString::fromStdWString(file.path().wstring()));
     auto filePath = fileInfo.filePath();
     files[filePath] = fileInfo;
@@ -31,7 +31,7 @@ void DirectoryWatcher::poll() {
   namespace fs = std::filesystem; // using namespace alias for std::filesystem
 
   // for created and updated files
-  for(const auto &file: fs::recursive_directory_iterator(path.toStdString())) {
+  for(const auto &file: fs::recursive_directory_iterator(path.toStdWString())) {
     auto fileInfo = QFileInfo(QString::fromStdWString(file.path().wstring()));
     auto filePath = fileInfo.filePath();
 
