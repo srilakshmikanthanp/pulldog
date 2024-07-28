@@ -9,35 +9,42 @@ namespace srilakshmikanthanp::pulldog::common {
 /**
  * @brief start to Copy the file with copier object
  */
-void Worker::checkAndCopy(const models::Transfer &transfer) {
+Worker::CopyStatus Worker::copy(const models::Transfer &transfer) {
   // create all parent directories
   if(!QDir().mkpath(QFileInfo(transfer.getTo()).dir().path())) {
-    return emit onCopyFailed(transfer);
+    emit onCopyFailed(transfer);
+    return CopyStatus::Error;
   }
+
+  // class of copier that inherits QRunnable
+  struct CopierRunnable : common::Copier, QRunnable {
+    void run() override { start(); }
+    using Copier::Copier;
+  };
+
+  // cleaner for the copier
+  const auto remover = [this, transfer]() {
+    QMutexLocker locker(&copingMutex);
+    copingFiles.remove(transfer);
+  };
 
   // lock the mutex
   QMutexLocker locker(&copingMutex);
 
   // if already coping
   if(copingFiles.contains(transfer)) {
-    auto action = [=] { this->checkAndCopy(transfer); };
-    auto copier = copingFiles[transfer];
-
-    if(copier->isCancelled()) {
-      return;
-    }
-
-    connect(copier, &common::Copier::onCopyCanceled, action);
-    connect(copier, &common::Copier::onCopyEnd, action);
-    connect(copier, &common::Copier::onCopyFailed, action);
-
-    return copier->cancel();
+    return CopyStatus::Retry;
   }
 
   // create a copier object
-  auto copier = new common::Copier(transfer);
+  auto copier = new CopierRunnable(transfer);
 
   // connect the signals
+  connect(
+    copier, &common::Copier::onCopyCanceled,
+    this, &Worker::onCopyCanceled
+  );
+
   connect(
     copier, &common::Copier::onCopyStart,
     this, &Worker::onCopyStart
@@ -54,11 +61,6 @@ void Worker::checkAndCopy(const models::Transfer &transfer) {
   );
 
   connect(
-    copier, &common::Copier::onCopyCanceled,
-    this, &Worker::onCopyCanceled
-  );
-
-  connect(
     copier, &common::Copier::onCopyFailed,
     this, &Worker::onCopyFailed
   );
@@ -68,66 +70,62 @@ void Worker::checkAndCopy(const models::Transfer &transfer) {
     this, &Worker::onError
   );
 
-  // cleaner for the copier
-  const auto cleaner = [this, transfer, copier]() {
-    QMutexLocker locker(&copingMutex);
-    copier->deleteLater();
-    copingFiles.remove(transfer);
-  };
-
   // to remove the copier from the map
-  connect(copier, &common::Copier::onCopyCanceled, cleaner);
-  connect(copier, &common::Copier::onCopyEnd, cleaner);
-  connect(copier, &common::Copier::onCopyFailed, cleaner);
+  connect(copier, &common::Copier::onCopyCanceled, remover);
+  connect(copier, &common::Copier::onCopyEnd, remover);
+  connect(copier, &common::Copier::onCopyFailed, remover);
 
   // add the copier to the coping files
   copingFiles[transfer] = copier;
 
   // start the copy
-  return QThreadPool::globalInstance()->start([copier] {
-    copier->start();
-  });
+  QThreadPool::globalInstance()->start(copier);
+
+  // return success
+  return CopyStatus::Success;
 }
 
 /**
  * @brief Process the pending file update and return the status
  */
-Worker::ProcessStatus Worker::process(const models::Transfer &pending) {
+Worker::CopyStatus Worker::process(const models::Transfer &pending) {
   // extract the source and destination file
   auto srcFile = pending.getFrom();
   auto srcInfo = QFileInfo(srcFile);
 
   // ignore if it is not exists or it is a directory
   if(srcInfo.isDir()) {
-    return ProcessStatus::Directory;
+    return CopyStatus::Directory;
   }
+
+  // using alias
+  using Error = common::ILocker::Error;
+  using Mode  = types::LockMode;
+  using Type  = types::LockType;
 
   // create an locker object
   common::Locker locker(
-    srcFile, types::LockMode::EXCLUSIVE, types::LockType::READ
+    srcFile, Mode::EXCLUSIVE, Type::READ
   );
 
   // lock
   auto status = locker.tryLock();
 
   // if it is non recoverable
-  if(status == common::ILocker::Error::UNRECOVERABLE) {
-    return ProcessStatus::Error;
+  if(status == Error::UNRECOVERABLE) {
+    return CopyStatus::Error;
   }
 
   // if it is recoverable
-  if(status == common::ILocker::Error::RECOVERABLE) {
-    return ProcessStatus::Retry;
+  if(status == Error::RECOVERABLE) {
+    return CopyStatus::Retry;
   }
 
   // unlock the file
   locker.unlock();
 
   // do copy
-  this->checkAndCopy(pending);
-
-  // return success
-  return ProcessStatus::Success;
+  return this->copy(pending);
 }
 
 /**
@@ -140,10 +138,10 @@ void Worker::processPendingFileUpdate() {
 
   for (auto pending: pendingFiles) {
     switch (this->process(pending)) {
-    case ProcessStatus::Retry:
+    case CopyStatus::Retry:
       failed.enqueue(pending);
       break;
-    case ProcessStatus::Error:
+    case CopyStatus::Error:
       emit onCopyFailed(pending);
       break;
     }
@@ -160,7 +158,7 @@ Worker::Worker(QObject *parent) : QObject(parent) {
   );
 
   // start the timer
-  timer.start(threshold / 2);
+  timer.start(threshold);
 }
 
 /**
@@ -174,15 +172,14 @@ long long Worker::getThreshold() const {
  * @brief Set threshold
  */
 void Worker::setThreshold(long long threshold) {
-  timer.setInterval((this->threshold = threshold) / 2);
+  timer.setInterval(this->threshold = threshold);
 }
-
 
 /**
  * @brief Retry a transfer
  */
-void Worker::retryTransfer(const models::Transfer &transfer) {
-  this->checkAndCopy(transfer);
+void Worker::retry(const models::Transfer &transfer) {
+  this->copy(transfer);
 }
 
 /**

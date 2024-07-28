@@ -29,27 +29,15 @@ class Worker : public QObject {
  private: // Private members
   // Currently Coping files with copier object
   QMap<models::Transfer, common::Copier*> copingFiles;
-
-  // Pending file update
   QQueue<models::Transfer> pendingFiles;
-
-  // timer for checking pending file update
+  QMutex pendingMutex;
+  QMutex copingMutex;
+  long long threshold = 2000;
   QTimer timer;
 
-  // mutex for updating pending file
-  QMutex pendingMutex;
-
-  // mutex for coping file
-  QMutex copingMutex;
-
-  // waiting threshold for coping file
-  long long threshold = 5000;
-
-  // maximum concurrent copies
-  int concurrentCopies = 20;
-
+ private: // Private members
   // process status
-  enum class ProcessStatus {
+  enum class CopyStatus {
     Success,
     Retry,
     Directory,
@@ -84,7 +72,7 @@ class Worker : public QObject {
   /**
    * @brief Process the pending file update
    */
-  ProcessStatus process(const models::Transfer &transfer);
+  CopyStatus process(const models::Transfer &transfer);
 
   /**
    * @brief Slot for time process pending file update
@@ -94,7 +82,7 @@ class Worker : public QObject {
   /**
    * @brief slot to handle file rename
    */
-  void checkAndCopy(const models::Transfer &transfer);
+  CopyStatus copy(const models::Transfer &transfer);
 
  public:
   /**
@@ -120,7 +108,7 @@ class Worker : public QObject {
   /**
    * @brief Retry a transfer
    */
-  void retryTransfer(const models::Transfer &transfer);
+  void retry(const models::Transfer &transfer);
 
   /**
    * @brief slot to handle file update

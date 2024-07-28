@@ -53,7 +53,7 @@ class Copier : public ICopier {
   /**
    * @brief Destroy the Copier object
    */
-  ~Copier() = default;
+  virtual ~Copier() = default;
 
   /**
    * @brief start

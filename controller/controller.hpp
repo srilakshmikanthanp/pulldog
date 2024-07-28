@@ -27,11 +27,19 @@
 namespace srilakshmikanthanp::pulldog {
 class Controller : public QObject {
  private: // Private members
+  QQueue<models::Transfer> events;
+
+ private: // Private members
+  std::atomic<int> parallelEvents = 10;
+  std::atomic<int> interval = 1000;
+
+ private: // Private members
   common::Watch watcher;
   QThread watcherThread;
   QDir destinationRoot;
   common::Worker worker;
   QThread workerThread;
+  QTimer trigger;
 
  private:  // Just for qt
   Q_OBJECT
@@ -45,6 +53,9 @@ class Controller : public QObject {
     const QString oldFile,
     const QString newFile
   );
+
+ private:
+  void processEvents();
 
  signals:
   void onCopyStart(const models::Transfer &transfer);
@@ -97,12 +108,32 @@ class Controller : public QObject {
   /**
    * @brief Get threshold
    */
-  long long getThreshold() const;
+  long long getWorkerThreshold() const;
 
   /**
    * @brief Set threshold
    */
-  void setThreshold(long long threshold);
+  void setWorkerThreshold(long long threshold);
+
+  /**
+   * @brief set the parallel events
+   */
+  void setParallelEvents(int events);
+
+  /**
+   * @brief get the parallel events
+   */
+  int getParallelEvents() const;
+
+  /**
+   * @brief set the interval
+   */
+  void setProcessInterval(int interval);
+
+  /**
+   * @brief get the interval
+   */
+  int getProcessInterval() const;
 
   /**
    * @brief Get the Paths object
@@ -117,7 +148,7 @@ class Controller : public QObject {
   /**
    * @brief Retry a transfer
    */
-  void retryTransfer(const models::Transfer &transfer);
+  void retry(const models::Transfer &transfer);
 
   /**
    * @brief Add a path to watch

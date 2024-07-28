@@ -22,17 +22,15 @@ DWORD CALLBACK Copier::copyFileCallBack(
 ) {
   auto progress = (static_cast<double>(totalBytesTransferred.QuadPart) / totalFileSize.QuadPart) * 100;
   auto copier = reinterpret_cast<Copier *>(lpData);
-  copier->emit onCopy(copier->transfer, progress);
   QMutexLocker locker(&copier->mutex);
 
   // check if handle is valid since the network drive may disconnected
-  BY_HANDLE_FILE_INFORMATION sourceInfo;
-  BY_HANDLE_FILE_INFORMATION destInfo;
+  BY_HANDLE_FILE_INFORMATION info;
 
   // get the file information
   if (
-    !GetFileInformationByHandle(hSourceFile, &sourceInfo) ||
-    !GetFileInformationByHandle(hDestinationFile, &destInfo)
+    !GetFileInformationByHandle(hDestinationFile, &info) ||
+    !GetFileInformationByHandle(hSourceFile, &info)
   ) {
     return PROGRESS_STOP;
   }
@@ -41,6 +39,9 @@ DWORD CALLBACK Copier::copyFileCallBack(
   if (copier->cancelFlag) {
     return PROGRESS_CANCEL;
   }
+
+  // emit progress
+  copier->emit onCopy(copier->transfer, progress);
 
   // return 0 to continue the copy
   return PROGRESS_CONTINUE;
@@ -72,18 +73,16 @@ void Copier::start() {
     copyFileCallBack,
     this,
     &cancelFlag,
+    COPY_FILE_FAIL_IF_EXISTS  |
     COPY_FILE_RESTARTABLE     |
-    COPY_FILE_NO_BUFFERING    |
-    COPY_FILE_FAIL_IF_EXISTS
+    COPY_FILE_NO_BUFFERING
   )) {
-    emit this->onCopyEnd(transfer);
-    return;
+    return emit this->onCopyEnd(transfer);
   }
 
   // if canceled
   if (cancelFlag) {
-    emit this->onCopyCanceled(transfer);
-    return;
+    return emit this->onCopyCanceled(transfer);
   }
 
   // get the error
@@ -100,7 +99,6 @@ void Copier::start() {
  */
 void Copier::cancel() {
   QMutexLocker locker(&mutex);
-
   if(!jobDone) {
     this->cancelFlag = true;
   }

@@ -17,10 +17,8 @@ void Controller::handleFileUpdate(const QString dir, const QString path) {
   // Create a key for the pending file update
   auto key = models::Transfer(srcFile, destFile);
 
-  // call the file processor on that thread
-  QMetaObject::invokeMethod(
-    &worker, [=] { this->worker.handleFileUpdate(key); }
-  );
+  // add it to events
+  this->events.enqueue(key);
 }
 
 /**
@@ -35,9 +33,28 @@ void Controller::handleFileRename(
 }
 
 /**
+ * @brief Process events
+ */
+void Controller::processEvents() {
+  for (auto i = 0; i < parallelEvents && !events.isEmpty(); i++) {
+    auto transfer = events.dequeue();
+    QMetaObject::invokeMethod(
+      &worker, [=] { worker.handleFileUpdate(transfer); }
+    );
+  }
+}
+
+/**
  * @brief Construct a new Controller object
  */
 Controller::Controller(QObject *parent) : QObject(parent) {
+  connect(
+    &trigger, &QTimer::timeout,
+    this, &Controller::processEvents
+  );
+
+  this->trigger.start(interval);
+
   connect(
     &worker, &common::Worker::onCopyStart,
     this, &Controller::onCopyStart
@@ -139,15 +156,43 @@ void Controller::setDestinationRoot(const QString &path) {
 /**
  * @brief Get threshold
  */
-long long Controller::getThreshold() const {
+long long Controller::getWorkerThreshold() const {
   return worker.getThreshold();
 }
 
 /**
  * @brief Set threshold
  */
-void Controller::setThreshold(long long threshold) {
+void Controller::setWorkerThreshold(long long threshold) {
   worker.setThreshold(threshold);
+}
+
+/**
+ * @brief set the parallel events
+ */
+void Controller::setParallelEvents(int events) {
+  parallelEvents = events;
+}
+
+/**
+ * @brief get the parallel events
+ */
+int Controller::getParallelEvents() const {
+  return parallelEvents;
+}
+
+/**
+ * @brief set the interval
+ */
+void Controller::setProcessInterval(int interval) {
+  trigger.setInterval(this->interval = interval);
+}
+
+/**
+ * @brief get the interval
+ */
+int Controller::getProcessInterval() const {
+  return interval;
 }
 
 /**
@@ -171,9 +216,9 @@ QStringList Controller::watchPaths() const {
 /**
  * @brief Retry a transfer
  */
-void Controller::retryTransfer(const models::Transfer &transfer) {
+void Controller::retry(const models::Transfer &transfer) {
   QMetaObject::invokeMethod(
-    &worker, [=] { this->worker.retryTransfer(transfer); }
+    &worker, [=] { this->worker.retry(transfer); }
   );
 }
 

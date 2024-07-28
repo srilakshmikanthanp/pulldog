@@ -223,8 +223,8 @@ class PullDogApplication : public SingleApplication {
     connect(
       window, &PullDog::onRetryRequested,
       [=] (models::Transfer transfer) {
-        controller->retryTransfer(transfer);
         window->removeFailed(transfer);
+        controller->retry(transfer);
       }
     );
 
