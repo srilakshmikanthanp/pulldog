@@ -80,17 +80,8 @@ void FailedInfo::removeFailedTile(components::FailedTile *tile) {
   // remove the tile from the list
   this->failedList.removeOne(tile);
 
-  // disconnect ignore signal
-  disconnect(
-    tile, &components::FailedTile::onIgnoreRequested,
-    this, &FailedInfo::removeFailedTile
-  );
-
-  // disconnect the signal
-  disconnect(
-    tile, &components::FailedTile::onRetryRequested,
-    this, &FailedInfo::onRetryRequested
-  );
+  // disconnect all signals
+  tile->disconnect();
 
   // up date the scroll area
   this->update();
@@ -111,7 +102,7 @@ void FailedInfo::addFailedTile(components::FailedTile *tile) {
   // connect ignore signal
   connect(
     tile, &components::FailedTile::onIgnoreRequested,
-    this, &FailedInfo::removeFailedTile
+    [=](auto transfer)  { this->removeFailedTile(tile); }
   );
 
   // connect the signal

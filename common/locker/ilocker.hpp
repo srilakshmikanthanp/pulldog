@@ -9,8 +9,6 @@
 #include <QDir>
 #include <chrono>
 
-#include "types/lockmode/lockmode.hpp"
-
 namespace srilakshmikanthanp::pulldog::common {
 class ILocker : public QObject {
  private:
@@ -23,6 +21,20 @@ class ILocker : public QObject {
   using MSec = std::chrono::milliseconds;
 
  public:
+  /**
+   * @brief Lock mode
+   */
+  enum class LockMode {
+    SHARE, EXCLUSIVE
+  };
+
+  /**
+   * @brief Lock type
+   */
+  enum class LockType {
+    READ, WRITE
+  };
+
   enum Error {
     RECOVERABLE = -1,
     UNRECOVERABLE = -2

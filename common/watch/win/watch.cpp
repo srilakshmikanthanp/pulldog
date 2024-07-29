@@ -8,7 +8,7 @@
 namespace srilakshmikanthanp::pulldog::common {
 void WinWatch::processFileInfo(
   DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo,
-  QList<QPair<QString, QString>> &entryCreated, 
+  QList<QPair<QString, QString>> &entryCreated,
   QList<QPair<QString, QString>> &entryUpdated,
   QList<QPair<QString, QString>> &entryRemoved,
   QList<std::tuple<QString, QString, QString>> &entryRenamed
@@ -20,10 +20,10 @@ void WinWatch::processFileInfo(
 
   switch (fileInfo->Action) {
     case FILE_ACTION_MODIFIED:
-      entryUpdated.append(dir->baseDir, relQtStr);
+      entryUpdated.append({dir->baseDir, relQtStr});
       break;
     case FILE_ACTION_ADDED:
-      entryCreated.append(dir->baseDir, relQtStr);
+      entryCreated.append({dir->baseDir, relQtStr});
       break;
     case FILE_ACTION_RENAMED_OLD_NAME:
       dir->oldFileName = relQtStr;
@@ -32,7 +32,7 @@ void WinWatch::processFileInfo(
       entryRenamed.append({dir->baseDir, dir->oldFileName, relQtStr});
       break;
     case FILE_ACTION_REMOVED:
-      entryRemoved.append(dir->baseDir, relQtStr);
+      entryRemoved.append({dir->baseDir, relQtStr});
       break;
     default:
       break;
@@ -134,17 +134,17 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
 
   // Emit the signals for created
   for (auto file: entryCreated) {
-    emit watcher->pathCreated(file.first, file.second);
+    emit watcher->fileCreated(file.first, file.second);
   }
 
   // Emit the signals for updated
   for (auto file: entryUpdated) {
-    emit watcher->pathUpdated(file.first, file.second);
+    emit watcher->fileUpdated(file.first, file.second);
   }
 
   // Emit the signals for removed
   for (auto file: entryRemoved) {
-    emit watcher->pathRemoved(file.first, file.second);
+    emit watcher->fileRemoved(file.first, file.second);
   }
 
   // Emit the signals for renamed
@@ -152,7 +152,7 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
     auto dirPath = std::get<0>(file);
     auto oldFile = std::get<1>(file);
     auto newFile = std::get<2>(file);
-    emit watcher->pathRenamed(dirPath, oldFile, newFile);
+    emit watcher->fileRename(dirPath, oldFile, newFile);
   }
 }
 

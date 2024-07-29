@@ -99,8 +99,8 @@ Worker::CopyStatus Worker::process(const models::Transfer &pending) {
 
   // using alias
   using Error = common::ILocker::Error;
-  using Mode  = types::LockMode;
-  using Type  = types::LockType;
+  using Mode  = common::ILocker::LockMode;
+  using Type  = common::ILocker::LockType;
 
   // create an locker object
   common::Locker locker(

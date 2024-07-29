@@ -103,7 +103,7 @@ bool isUptoDateByMetaData(const QString &src, const QString &dest) {
   }
 
   // check if the file is same
-  if (destInfo.created() < srcInfo.lastModified()) {
+  if (destInfo.birthTime() < srcInfo.lastModified()) {
     return false;
   }
 
@@ -141,7 +141,7 @@ QString getFileNameFromHandle(HANDLE hFile) {
   );
 
   if(size == 0) {
-    auto msg = QString("Error: %1").arg(GetLastError())
+    auto msg = QString("Error: %1").arg(GetLastError());
     throw std::runtime_error(msg.toStdString());
   }
 
@@ -183,23 +183,25 @@ QPair<DWORD, DWORD> getFileId(QString file) {
     file.toStdWString().c_str(),
     0,
     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-    nullptr,
+    NULL,
     OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
-    nullptr
+    FILE_FLAG_BACKUP_SEMANTICS,
+    NULL
   );
+
+  auto check = GetLastError();
 
   // check if the file handle is valid
   if (handle == INVALID_HANDLE_VALUE) {
-    throw std::runtime_error("Failed to get file id");
+    throw std::runtime_error("Failed to get file id: " + std::to_string(GetLastError()));
   }
 
   // get the file id
   BY_HANDLE_FILE_INFORMATION info;
-  
+
   // get the file id
   if(!GetFileInformationByHandle(handle, &info)) {
-    throw std::runtime_error("Failed to get file id");
+    throw std::runtime_error("Failed to get file id: " + std::to_string(GetLastError()));
   }
 
   // close the file handle

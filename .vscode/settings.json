@@ -165,6 +165,9 @@
         "qthread": "cpp",
         "qstackedwidget": "cpp",
         "qprogressbar": "cpp",
-        "qfiledialog": "cpp"
+        "qfiledialog": "cpp",
+        "qstackedlayout": "cpp",
+        "qstyleoption": "cpp",
+        "qregularexpression": "cpp"
     }
 }

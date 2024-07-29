@@ -11,6 +11,8 @@
 #include <QWidget>
 #include <QWidget>
 #include <QFile>
+#include <QString>
+#include <QFileInfo>
 #include <QRegularExpression>
 
 #ifdef _WIN32
@@ -20,7 +22,7 @@
 #undef NOMINMAX
 #endif
 
-#include <QString>
+#include <random>
 #include <stdexcept>
 
 namespace srilakshmikanthanp::pulldog::utility {

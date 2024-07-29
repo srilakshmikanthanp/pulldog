@@ -6,5 +6,17 @@
 #include "deferred.hpp"
 
 namespace srilakshmikanthanp::pulldog::utility {
-Deferred(Deleter deleter) : std::shared_ptr<void>(nullptr, deleter) {}
+/**
+ * @brief Constructor to create deferred object
+ */
+Deferred::Deferred(const std::function<void()> &func) : func(func) {
+  // Nothing to do
 }
+
+/**
+ * @brief Destructor to execute the function
+ */
+Deferred::~Deferred() {
+  func();
+}
+} // namespace srilakshmikanthanp::pulldog::utility

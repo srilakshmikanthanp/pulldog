@@ -18,7 +18,6 @@
 #include <chrono>
 
 #include "common/locker/ilocker.hpp"
-#include "types/lockmode/lockmode.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
 class Locker : public ILocker {
@@ -26,15 +25,12 @@ class Locker : public ILocker {
   Q_DISABLE_COPY(Locker)
 
  private:
-  using LockMode = types::LockMode;
   using MSec = std::chrono::milliseconds;
-  using LockType = types::LockType;
-
 
  private:
   HANDLE hFile = INVALID_HANDLE_VALUE;
-  types::LockMode mode;
-  types::LockType type;
+  LockMode mode;
+  LockType type;
   QString file;
 
  private: // Just for qt
@@ -46,8 +42,8 @@ class Locker : public ILocker {
    */
   Locker(
     const QString,
-    LockMode mode = types::LockMode::SHARE,
-    LockType type = types::LockType::READ,
+    LockMode mode = LockMode::SHARE,
+    LockType type = LockType::READ,
     QObject *parent = nullptr
   );
 

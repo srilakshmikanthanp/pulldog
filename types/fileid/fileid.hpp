@@ -5,35 +5,45 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-#include <QFileInfo>
-
-#ifndef _WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 
 #include "utility/functions/functions.hpp"
 
 namespace srilakshmikanthanp::pulldog::types {
-struct FileInfo : public QFileInfo {
+struct FileId {
  private:
+
 #ifdef _WIN32
-  DWORD high;
-  DWORD low;
+  DWORD high, low;
 #endif
 
  public:
+
   /**
-   * @brief constructor that has all the 
-   * constructors of QFileInfo
+   * @brief constructor to get the file id
    */
-  template<typename... Args>
-  FileInfo(Args&&... args): QFileInfo(std::forward<Args>(args)...){
-    std::tie(high, low) = utility::getFileId(this->absoluteFilePath());
-  }
+  FileId(QString file);
+
+  /**
+   * @brief Default constructor
+   */
+  FileId();
+
+  /**
+   * @brief set file
+   */
+  void setFile(QString file);
 
   /**
    * @brief is same file
    */
-  bool isSameFile(const FileInfo &file) const;
+  bool isSameFile(const FileId &file) const;
+
+  /**
+   * @brief Equality operator
+   */
+  bool operator==(const FileId &other) const;
 };
 }  // namespace srilakshmikanthanp::pulldog::types

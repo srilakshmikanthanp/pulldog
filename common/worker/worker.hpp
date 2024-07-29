@@ -37,7 +37,7 @@ class Worker : public QObject {
 
  private: // Private members
   // process status
-  enum class CopyStatus {
+  enum CopyStatus {
     Success = 0,
     Retry = -1,
     Directory = -2,

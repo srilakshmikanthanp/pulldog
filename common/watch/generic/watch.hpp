@@ -15,63 +15,12 @@
 
 #include <filesystem>
 
+#include "common/watch/generic/dirwatch.hpp"
 #include "common/watch/iwatch.hpp"
 #include "common/watch/win/watch.hpp"
-#include "types/fileinfo/fileinfo.hpp"
+#include "types/fileid/fileid.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
-class DirectoryWatcher : public QObject {
- private:
-  Q_DISABLE_COPY(DirectoryWatcher)
-
- private: // Just for qt
-  Q_OBJECT
-
- private:
-  QString path;
-
- private:
-  QMap<QString, FileInfo> files;
-
- signals:
-  void fileCreated(const QString &dir, const QString &file);
-  void fileRemoved(const QString &dir, const QString &file);
-  void fileUpdated(const QString &dir, const QString &file);
-
- signals:
-  void fileRename(
-    const QString directory,
-    const QString oldFile,
-    const QString newFile
-  );
-
- public:
-  /**
-   * @brief Construct a new Directory Watcher object
-   *
-   * @param path
-   * @param parent
-   */
-  DirectoryWatcher(const QString &path, QObject *parent = nullptr);
-
-  /**
-   * @brief Poll the directory return true if any change
-   */
-  bool poll();
-
-  /**
-   * @brief Get the Path object
-   */
-  QString getPath() const;
-
-  /**
-   * @brief Destroy the Directory Watcher object
-   */
-  ~DirectoryWatcher() override = default;
-};
-
-// --------------------------------------------------------------------------------
-
 class GenericWatch : public IWatch {
  private:
   Q_DISABLE_COPY(GenericWatch)
@@ -80,19 +29,26 @@ class GenericWatch : public IWatch {
   Q_OBJECT
 
  private:
-  const static char* pollIntervalKey = "pollInterval";
-  const static char* lastPollKey = "lastPoll";
-  const static int pollInterval = 10000;
-  const static int maxPollInterval = 60000;
+  static inline const char* pollIntervalKey = "pollInterval";
+  static inline const char* lastPollKey = "lastPoll";
+  static inline const int pollInterval = 10000;
+  static inline const int maxPollInterval = 60000;
 
  private:
-  QList<DirectoryWatcher*> directories;
+  QList<DirWatcher*> directories;
   mutable QMutex mutex;
   QTimer poller;
-  QThread watcherThread;
   QThread pollerThread;
 
  private:
+  /**
+   * @brief Poll the directory on its own thread
+   */
+  void pollDirectory(DirWatcher *dir);
+
+  /**
+   * @brief delegates the poll to the directories
+   */
   void poll();
 
  public:

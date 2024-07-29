@@ -7,14 +7,21 @@
 
 #include <functional>
 #include <utility>
+#include <memory>
 
 namespace srilakshmikanthanp::pulldog::utility {
 /**
  * @brief Deferred class to execute a function at the end of the scope
  */
-template<class Deleter>
-struct Deferred : struct std::shared_ptr<void> {
-  Deferred(Deleter deleter);
+struct Deferred {
+  // Constructor to create deferred object
+  Deferred(const std::function<void()> &func);
+
+  // Destructor to execute the function
+  ~Deferred();
+
+ private:
+  std::function<void()> func;
 };
 }  // namespace srilakshmikanthanp::pulldog::utility
 

@@ -25,13 +25,11 @@ DWORD CALLBACK Copier::copyFileCallBack(
   QMutexLocker locker(&copier->mutex);
 
   // check if handle is valid since the network drive may disconnected
-  BY_HANDLE_FILE_INFORMATION info;
+  if(!QFileInfo(copier->transfer.getFrom()).exists()) {
+    return PROGRESS_STOP;
+  }
 
-  // get the file information
-  if (
-    !GetFileInformationByHandle(hDestinationFile, &info) ||
-    !GetFileInformationByHandle(hSourceFile, &info)
-  ) {
+  if(!QFileInfo(copier->transfer.getTo()).exists()) {
     return PROGRESS_STOP;
   }
 
@@ -90,7 +88,7 @@ void Copier::start() {
   }
 
   // using functions::isUptoDate
-  using functions::isUptoDate;
+  using utility::isUptoDate;
 
   // get the error
   auto error = GetLastError();
