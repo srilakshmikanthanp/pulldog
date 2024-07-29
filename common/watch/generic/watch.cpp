@@ -139,7 +139,15 @@ void GenericWatch::poll() {
       continue;
     }
 
-    auto updated = directory->poll();
+    auto updated = false;
+
+    try {
+      updated = directory->poll();
+    } catch (const std::filesystem::filesystem_error &e) {
+      emit onError(e.what());
+      continue;
+    }
+
     auto time = QDateTime::currentDateTime();
     auto newInterval = pollInterval;
 
