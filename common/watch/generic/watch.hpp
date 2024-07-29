@@ -47,9 +47,9 @@ class DirectoryWatcher : public QObject {
   DirectoryWatcher(const QString &path, QObject *parent = nullptr);
 
   /**
-   * @brief Poll the directory
+   * @brief Poll the directory return true if any change
    */
-  void poll();
+  bool poll();
 
   /**
    * @brief Get the Path object
@@ -72,7 +72,10 @@ class GenericWatch : public IWatch {
   Q_OBJECT
 
  private:
-  constexpr static int pollInterval = 1000;
+  const static char* pollIntervalKey = "pollInterval";
+  const static char* lastPollKey = "lastPoll";
+  const static int pollInterval = 1000;
+  const static int maxPollInterval = 60000;
 
  private:
   QList<DirectoryWatcher*> directories;

@@ -27,8 +27,9 @@ QString DirectoryWatcher::getPath() const {
 /**
  * @brief Poll the directory
  */
-void DirectoryWatcher::poll() {
+bool DirectoryWatcher::poll() {
   namespace fs = std::filesystem; // using namespace alias for std::filesystem
+  auto updated = false;
 
   // for created and updated files
   for(const auto &file: fs::recursive_directory_iterator(path.toStdWString())) {
@@ -46,6 +47,7 @@ void DirectoryWatcher::poll() {
     if(!files.contains(filePath)) {
       files[filePath] = fileInfo;
       emit fileCreated(path, relStr);
+      updated = true;
       continue;
     }
 
@@ -59,6 +61,7 @@ void DirectoryWatcher::poll() {
     if(cacheLast != fileLast || cacheSize != fileSize) {
       files[filePath] = fileInfo;
       emit fileUpdated(path, relStr);
+      updated = true;
     }
   }
 
@@ -70,11 +73,14 @@ void DirectoryWatcher::poll() {
       auto relPath = fs::relative(keyPath, file);
       auto relStr = QString::fromStdWString(relPath.wstring());
       emit fileRemoved(path, relStr);
+      updated = true;
       it = files.erase(it);
     } else {
       ++it;
     }
   }
+
+  return updated;
 }
 
 // --------------------------------------------------------------------------------
@@ -119,10 +125,30 @@ GenericWatch::~GenericWatch() {
 void GenericWatch::poll() {
   QMutexLocker locker(&mutex);
   for(auto directory: directories) {
+    auto lastPoll = directory->property(lastPollKey).toDateTime();
+    auto interval = directory->property(pollIntervalKey).toInt();
     auto dir = QDir(directory->getPath());
-    if(dir.exists()) {
-      directory->poll();
+
+    if(!dir.exists()) {
+      continue;
     }
+
+    auto diff = lastPoll.msecsTo(QDateTime::currentDateTime());
+    
+    if(diff < interval) {
+      continue;
+    }
+
+    auto updated = directory->poll();
+    auto time = QDateTime::currentDateTime();
+    auto newInterval = pollInterval;
+
+    if(!updated) {
+      newInterval = std::min(interval * 2, maxPollInterval);
+    }
+
+    directory->setProperty(lastPollKey, time);
+    directory->setProperty(pollIntervalKey, newInterval);
   }
 }
 
@@ -134,6 +160,7 @@ void GenericWatch::poll() {
 void GenericWatch::addPath(const QString &dir, bool recursive) {
   DirectoryWatcher* dirWatch = nullptr;
   auto path = QDir::cleanPath(dir);
+  auto time = QDateTime::currentDateTime();
 
   try {
     dirWatch = new DirectoryWatcher(path);
@@ -142,6 +169,9 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
     emit pathRemoved(path);
     return;
   }
+
+  dirWatch->setProperty(pollIntervalKey, pollInterval);
+  dirWatch->setProperty(lastPollKey, time);
 
   connect(
     &this->watcherThread, &QThread::finished,
