@@ -19,11 +19,6 @@ bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int 
     return false;
   }
 
-  // if file size less than hash size compare the file
-  if (srcFile.size() < hashSize || destFile.size() < hashSize) {
-    return srcFile.readAll() == destFile.readAll();
-  }
-
   // get the file size
   auto destSize = destFile.size();
   auto srcSize = srcFile.size();
@@ -31,6 +26,11 @@ bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int 
   // check if the file size is same
   if (srcSize != destSize) {
     return false;
+  }
+
+  // if file size less than hash size compare the file
+  if (srcSize < hashSize) {
+    return srcFile.readAll() == destFile.readAll();
   }
 
   // get first chunk of the file
