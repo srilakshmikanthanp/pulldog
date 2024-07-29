@@ -80,6 +80,12 @@ void FailedInfo::removeFailedTile(components::FailedTile *tile) {
   // remove the tile from the list
   this->failedList.removeOne(tile);
 
+  // disconnect ignore signal
+  disconnect(
+    tile, &components::FailedTile::onIgnoreRequested,
+    this, &FailedInfo::removeFailedTile
+  );
+
   // disconnect the signal
   disconnect(
     tile, &components::FailedTile::onRetryRequested,
@@ -102,12 +108,16 @@ void FailedInfo::addFailedTile(components::FailedTile *tile) {
   // add the progress to the list
   this->failedList.append(tile);
 
+  // connect ignore signal
+  connect(
+    tile, &components::FailedTile::onIgnoreRequested,
+    this, &FailedInfo::removeFailedTile
+  );
+
   // connect the signal
   connect(
     tile, &components::FailedTile::onRetryRequested,
-    [=](models::Transfer transfer) {
-      emit this->onRetryRequested(transfer);
-    }
+    this, &FailedInfo::onRetryRequested
   );
 
   // up date the scroll area

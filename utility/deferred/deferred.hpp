@@ -12,20 +12,9 @@ namespace srilakshmikanthanp::pulldog::utility {
 /**
  * @brief Deferred class to execute a function at the end of the scope
  */
-class Deferred {
- private: // store the function
-  std::function<void()> func;
-
- public:
-  /**
-   * @brief constructor to store the function
-   */
-  Deferred(const std::function<void()> &func);
-
-  /**
-   * @brief destructor to execute the function
-   */
-  ~Deferred();
+template<class Deleter>
+struct Deferred : struct std::shared_ptr<void> {
+  Deferred(Deleter deleter);
 };
 }  // namespace srilakshmikanthanp::pulldog::utility
 
@@ -33,7 +22,9 @@ class Deferred {
  * @brief Utility macro to join two tokens
  */
 #define DEFER_ACTUALLY_JOIN(x, y) x##y
+
 #define DEFER_JOIN(x, y) DEFER_ACTUALLY_JOIN(x, y)
+
 #ifdef __COUNTER__
   #define DEFER_UNIQUE_VARNAME(x) DEFER_JOIN(x, __COUNTER__)
 #else

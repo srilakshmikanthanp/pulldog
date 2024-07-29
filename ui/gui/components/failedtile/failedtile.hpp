@@ -36,8 +36,9 @@ class FailedTile : public QWidget {
 
  private:
 
-  QLabel *label            = new QLabel();
-  QPushButton *retryButton = new QPushButton();
+  QLabel *label       = new QLabel();
+  QPushButton *retry  = new QPushButton();
+  QPushButton *ignore = new QPushButton();
 
  private:
 
@@ -49,6 +50,12 @@ class FailedTile : public QWidget {
    * @brief Set up the language
    */
   void setupLanguage();
+
+ signals:
+  /**
+   * @brief signal to emit when the failed tile is ignored
+   */
+  void onIgnoreRequested(models::Transfer transfer);
 
  signals:
   /**

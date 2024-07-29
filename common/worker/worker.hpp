@@ -38,10 +38,10 @@ class Worker : public QObject {
  private: // Private members
   // process status
   enum class CopyStatus {
-    Success,
-    Retry,
-    Directory,
-    Error,
+    Success = 0,
+    Retry = -1,
+    Directory = -2,
+    Error = -3,
   };
 
  private:  // Just for qt
@@ -57,7 +57,7 @@ class Worker : public QObject {
   void onCopyEnd(const models::Transfer &transfer);
 
  signals:
-  void onCopyFailed(const models::Transfer &transfer);
+  void onCopyFailed(const models::Transfer &transfer, int error);
 
  signals:
   void onCopyCanceled(const models::Transfer &transfer);

@@ -70,7 +70,7 @@ class Controller : public QObject {
   void onCopyCanceled(const models::Transfer &transfer);
 
  signals:
-  void onCopyFailed(const models::Transfer &transfer);
+  void onCopyFailed(const models::Transfer &transfer, int error);
 
  signals:
   void pathAdded(const QString &path);

@@ -63,13 +63,17 @@ Copier::Copier(models::Transfer transfer, QObject *parent)
  * @brief start
  */
 void Copier::start() {
+  // get the from and to of the transfer
+  auto from = transfer.getFrom();
+  auto to = transfer.getTo();
+
   // emit the started signal
   emit this->onCopyStart(transfer);
 
   // copy file blocking
   if (this->jobDone = CopyFileEx(
-    reinterpret_cast<LPCWSTR>(transfer.getFrom().utf16()),
-    reinterpret_cast<LPCWSTR>(transfer.getTo().utf16()),
+    reinterpret_cast<LPCWSTR>(from.utf16()),
+    reinterpret_cast<LPCWSTR>(to.utf16()),
     copyFileCallBack,
     this,
     &cancelFlag,
@@ -85,13 +89,19 @@ void Copier::start() {
     return emit this->onCopyCanceled(transfer);
   }
 
+  // using functions::isUptoDate
+  using functions::isUptoDate;
+
   // get the error
   auto error = GetLastError();
-  auto msg = QString("Failed copy %1 to %2 : %3").arg(transfer.getFrom(), transfer.getTo(), QString::number(error));
-  emit this->onError(msg);
+
+  // if already exists
+  if (error == ERROR_FILE_EXISTS && isUptoDate(from, to)) {
+    return emit this->onCopyEnd(transfer);
+  }
 
   // emit cancel signal
-  emit this->onCopyFailed(transfer);
+  emit this->onCopyFailed(transfer, error);
 }
 
 /**

@@ -25,8 +25,23 @@
 
 namespace srilakshmikanthanp::pulldog::utility {
 /**
+ * @brief compare file by partial file hash
+ */
+bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int chunks = 50, const int hashSize = 1024);
+
+/**
+ * @brief compare file by file metadata
+ */
+bool isUptoDateByMetaData(const QString &src, const QString &dest);
+
+/**
+ * @brief compare file with all the methods may not be accurate
+ * but it is fast and efficient
+ */
+bool isUptoDate(const QString &src, const QString &dest);
+
+/**
  * @brief get the file name from the handle
- *
  */
 #ifdef _WIN32
 QString getFileNameFromHandle(HANDLE hFile);

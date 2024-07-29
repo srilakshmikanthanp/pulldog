@@ -36,7 +36,7 @@ class ICopier : public QObject {
   void onCopyEnd(const models::Transfer&);
 
  signals:
-  void onCopyFailed(const models::Transfer&);
+  void onCopyFailed(const models::Transfer&, int error);
 
  signals:
   void onCopyCanceled(const models::Transfer&);

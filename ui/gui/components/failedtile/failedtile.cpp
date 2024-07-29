@@ -17,9 +17,9 @@ FailedTile::FailedTile(models::Transfer transfer, QWidget *parent): QWidget(pare
   label->setText(transfer.getFrom());
 
   // set the style
-  retryButton->setIcon(QIcon(":/images/refresh.png"));
-  retryButton->setObjectName("Transparent");
-  retryButton->setCursor(Qt::PointingHandCursor);
+  retry->setIcon(QIcon(":/images/refresh.png"));
+  retry->setObjectName("Transparent");
+  retry->setCursor(Qt::PointingHandCursor);
 
   // add the label to the layout
   layout->addWidget(label);
@@ -28,14 +28,21 @@ FailedTile::FailedTile(models::Transfer transfer, QWidget *parent): QWidget(pare
   layout->addStretch();
 
   // add the retry button to the layout
-  layout->addWidget(retryButton);
+  layout->addWidget(retry);
+  layout->addWidget(ignore);
 
   // set the layout
   setLayout(layout);
 
+  // connect the ignore button
+  connect(
+    ignore, &QPushButton::clicked,
+    [=] { emit onIgnoreRequested(transfer); }
+  );
+
   // connect the retry button
   connect(
-    retryButton, &QPushButton::clicked,
+    retry, &QPushButton::clicked,
     [=] { emit onRetryRequested(transfer); }
   );
 
@@ -47,7 +54,7 @@ FailedTile::FailedTile(models::Transfer transfer, QWidget *parent): QWidget(pare
  * @brief Set up the language
  */
 void FailedTile::setupLanguage() {
-
+  ignore->setText(tr("Ignore"));
 }
 
 

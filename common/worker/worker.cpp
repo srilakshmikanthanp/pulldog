@@ -12,7 +12,6 @@ namespace srilakshmikanthanp::pulldog::common {
 Worker::CopyStatus Worker::copy(const models::Transfer &transfer) {
   // create all parent directories
   if(!QDir().mkpath(QFileInfo(transfer.getTo()).dir().path())) {
-    emit onCopyFailed(transfer);
     return CopyStatus::Error;
   }
 
@@ -138,11 +137,11 @@ void Worker::processPendingFileUpdate() {
 
   for (auto pending: pendingFiles) {
     switch (this->process(pending)) {
+    case CopyStatus::Error:
+      emit onCopyFailed(pending, CopyStatus::Error);
+      break;
     case CopyStatus::Retry:
       failed.enqueue(pending);
-      break;
-    case CopyStatus::Error:
-      emit onCopyFailed(pending);
       break;
     }
   }
