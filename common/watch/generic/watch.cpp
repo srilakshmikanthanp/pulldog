@@ -11,7 +11,7 @@ namespace srilakshmikanthanp::pulldog::common {
  */
 DirectoryWatcher::DirectoryWatcher(const QString &path, QObject *parent): QObject(parent), path(path) {
   for(const auto &file: std::filesystem::recursive_directory_iterator(path.toStdWString())) {
-    auto fileInfo = QFileInfo(QString::fromStdWString(file.path().wstring()));
+    auto fileInfo = FileInfo(QString::fromStdWString(file.path().wstring()));
     auto filePath = fileInfo.filePath();
     files[filePath] = fileInfo;
   }
@@ -28,23 +28,25 @@ QString DirectoryWatcher::getPath() const {
  * @brief Poll the directory
  */
 bool DirectoryWatcher::poll() {
-  QList<QString> entryCreated, entryUpdated, entryRemoved;
-  QList<QPair<QString, QString>> entryRenamed;
+  QList<FileInfo> entryCreated, entryUpdated, entryRemoved;
+  QList<QPair<FileInfo, FileInfo>> entryRenamed;
+
+  // lambda function that infers relative path
+  auto relativePath = [this](const std::filesystem::path &file) {
+    auto relPath = std::filesystem::relative(file, path.toStdWString());
+    return QDir::cleanPath(QString::fromStdWString(relPath.wstring()));
+  };
 
   namespace fs = std::filesystem;
 
   // for created and updated files
   for(const auto &file: fs::recursive_directory_iterator(path.toStdWString())) {
-    auto fileInfo = QFileInfo(QString::fromStdWString(file.path().wstring()));
+    auto fileInfo = FileInfo(QString::fromStdWString(file.path().wstring()));
     auto filePath = fileInfo.filePath();
-
-    // infer relative path using fs::relative
-    auto relPath = fs::relative(file.path(), path.toStdWString());
-    auto relStr = QDir::cleanPath(QString::fromStdWString(relPath.wstring()));
 
     // if the file is not in the cache
     if(!files.contains(filePath)) {
-      entryCreated.append(relStr);
+      entryCreated.append(fileInfo);
       files[filePath] = fileInfo;
       continue;
     }
@@ -57,7 +59,7 @@ bool DirectoryWatcher::poll() {
 
     // if the file is updated
     if(cacheLast != fileLast || cacheSize != fileSize) {
-      entryUpdated.append(relStr);
+      entryUpdated.append(fileInfo);
       files[filePath] = fileInfo;
     }
   }
@@ -65,10 +67,6 @@ bool DirectoryWatcher::poll() {
   // for removed files
   for(auto it = files.begin(); it != files.end();) {
     if (!fs::exists(it.key().toStdWString())) {
-      auto keyPath = it.key().toStdWString();
-      auto file = path.toStdWString();
-      auto relPath = fs::relative(keyPath, file);
-      auto relStr = QString::fromStdWString(relPath.wstring());
       entryRemoved.append(relStr);
       it = files.erase(it);
     } else {
@@ -79,13 +77,8 @@ bool DirectoryWatcher::poll() {
   // identify the renamed files from removed and created
   for(auto created: entryCreated) {
     for(auto removed: entryRemoved) {
-      auto createdPath = QDir(path).filePath(created);
-      auto removedPath = QDir(path).filePath(removed);
-
-      using functions::isSameFile;
-
-      if(isSameFile(createdPath, removedPath)) {
-        entryRenamed.append({removed, created}); break;
+      if(created.isSameFile(removed)) {
+        entryRenamed.append({removed, created});
       }
     }
   }
@@ -98,12 +91,12 @@ bool DirectoryWatcher::poll() {
 
   // emit the signals for created
   for(auto file: entryCreated) {
-    emit fileCreated(path, file);
+    emit fileCreated(path, relativePath(file.filePath()));
   }
 
   // emit the signals for updated
   for(auto file: entryUpdated) {
-    emit fileUpdated(path, file);
+    emit fileUpdated(path, relativePath(file.filePath()));
   }
 
   // emit the signals for removed
@@ -113,13 +106,15 @@ bool DirectoryWatcher::poll() {
 
   // emit the signals for renamed
   for(auto file: entryRenamed) {
-    auto newFile = file.second;
-    auto oldFile = file.first;
+    auto newFile = relativePath(file.second.filePath());
+    auto oldFile = relativePath(file.first.filePath());
     emit fileRename(path, oldFile, newFile);
   }
 
   // return true if any change
-  return entryCreated.size() || entryUpdated.size() || entryRemoved.size();
+  return entryCreated.size() || 
+         entryUpdated.size() || 
+         entryRemoved.size();
 }
 
 // --------------------------------------------------------------------------------

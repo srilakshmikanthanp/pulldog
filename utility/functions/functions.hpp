@@ -53,8 +53,7 @@ QString getFileNameFromHandle(HANDLE hFile);
 void setPlatformAttributes(QWidget *widget);
 
 /**
- * @brief Function used to chech the two file are same or not
- * using file id on windows
+ * @brief Function used to get the file id
  */
-bool isSameFile(const QString &left, const QString &right);
+QPair<DWORD, DWORD> getFileId(QString file);
 }  // namespace srilakshmikanthanp::utility

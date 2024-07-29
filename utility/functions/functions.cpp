@@ -177,31 +177,12 @@ void setPlatformAttributes(QWidget *widget) {
  * @brief Function used to chech the two file are same or not
  * using file id on windows
  */
-bool isSameFile(const QString &left, const QString &right) {
-#ifdef _WIN32
-  // get the file info
-  QFileInfo leftInfo(left), rightInfo(right);
-
-  // check if the file exists
-  if (!leftInfo.exists() || !rightInfo.exists()) {
-    return false;
-  }
-
+QPair<DWORD, DWORD> getFileId(QString file) {
   // get the file handle
-  auto leftHandle = CreateFileW(
-    left.toStdWString().c_str(),
-    GENERIC_READ,
-    FILE_SHARE_READ,
-    nullptr,
-    OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
-    nullptr
-  );
-
-  auto rightHandle = CreateFileW(
-    right.toStdWString().c_str(),
-    GENERIC_READ,
-    FILE_SHARE_READ,
+  auto handle = CreateFile(
+    file.toStdWString().c_str(),
+    0,
+    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
     nullptr,
     OPEN_EXISTING,
     FILE_ATTRIBUTE_NORMAL,
@@ -209,30 +190,22 @@ bool isSameFile(const QString &left, const QString &right) {
   );
 
   // check if the file handle is valid
-  if (
-    rightHandle == INVALID_HANDLE_VALUE ||
-    leftHandle == INVALID_HANDLE_VALUE
-  ) {
-    return false;
+  if (handle == INVALID_HANDLE_VALUE) {
+    throw std::runtime_error("Failed to get file id");
   }
 
   // get the file id
-  BY_HANDLE_FILE_INFORMATION leftInfo, rightInfo;
+  BY_HANDLE_FILE_INFORMATION info;
   
-  if(
-    !GetFileInformationByHandle(rightHandle, &rightInfo) || 
-    !GetFileInformationByHandle(leftHandle, &leftInfo)
-  ) {
-    return false;
+  // get the file id
+  if(!GetFileInformationByHandle(handle, &info)) {
+    throw std::runtime_error("Failed to get file id");
   }
 
   // close the file handle
-  CloseHandle(rightHandle);
-  CloseHandle(leftHandle);
+  CloseHandle(handle);
 
-  // check if the file id is same
-  return leftInfo.nFileIndexHigh == rightInfo.nFileIndexHigh &&
-         leftInfo.nFileIndexLow == rightInfo.nFileIndexLow;
-#endif
+  // return the file id
+  return {info.nFileIndexHigh, info.nFileIndexLow};
 }
 }  // namespace srilakshmikanthanp::utility

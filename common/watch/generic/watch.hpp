@@ -17,6 +17,7 @@
 
 #include "common/watch/iwatch.hpp"
 #include "common/watch/win/watch.hpp"
+#include "types/fileinfo/fileinfo.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
 class DirectoryWatcher : public QObject {
@@ -30,7 +31,7 @@ class DirectoryWatcher : public QObject {
   QString path;
 
  private:
-  QMap<QString, QFileInfo> files;
+  QMap<QString, FileInfo> files;
 
  signals:
   void fileCreated(const QString &dir, const QString &file);
