@@ -62,18 +62,22 @@ bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int 
   // loop through the chunks
   for (int i = 0; i < chunks; i++) {
     // seek the random chunk of the file
-    destFile.seek(dist(rd));
-    srcFile.seek(dist(rd));
+    auto offset = dist(rd);
+    destFile.seek(offset);
+    srcFile.seek(offset);
 
     // get the random chunk of the file
-    srcData = srcFile.read(hashSize);
     destData = destFile.read(hashSize);
+    srcData = srcFile.read(hashSize);
 
     // check if the random chunk is same
     if (srcData != destData) {
       return false;
     }
   }
+
+  // return true if all the above conditions are false
+  return true;
 }
 
 /**
