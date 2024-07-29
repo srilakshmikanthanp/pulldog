@@ -74,7 +74,7 @@ class GenericWatch : public IWatch {
  private:
   const static char* pollIntervalKey = "pollInterval";
   const static char* lastPollKey = "lastPoll";
-  const static int pollInterval = 1000;
+  const static int pollInterval = 10000;
   const static int maxPollInterval = 60000;
 
  private:
