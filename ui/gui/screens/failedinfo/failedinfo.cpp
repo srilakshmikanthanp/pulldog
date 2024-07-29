@@ -102,7 +102,7 @@ void FailedInfo::addFailedTile(components::FailedTile *tile) {
   // connect ignore signal
   connect(
     tile, &components::FailedTile::onIgnoreRequested,
-    [=](auto transfer)  { this->removeFailedTile(tile); }
+    [=](...) { removeFailedTile(tile); }
   );
 
   // connect the signal
