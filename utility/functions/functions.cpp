@@ -12,7 +12,6 @@ namespace srilakshmikanthanp::pulldog::utility {
 bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int chunks, const int hashSize) {
   // open the file
   QFile srcFile(src), destFile(dest);
-  constexpr auto hashSize = 1024;
 
   // check if the file is open
   if (!srcFile.open(QIODevice::ReadOnly) || !destFile.open(QIODevice::ReadOnly)) {
