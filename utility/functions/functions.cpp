@@ -42,8 +42,12 @@ bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int 
   }
 
   // seek the last chunk of the file
-  destFile.seek(destSize - hashSize);
-  srcFile.seek(srcSize - hashSize);
+  if(
+    !destFile.seek(destSize - hashSize) ||
+    !srcFile.seek(srcSize - hashSize)
+  ) {
+    return false;
+  }
 
   // get the last chunk of the file
   destData = destFile.read(hashSize);
@@ -62,8 +66,10 @@ bool isUptoDateByPartialHash(const QString &src, const QString &dest, const int 
   for (int i = 0; i < chunks; i++) {
     // seek the random chunk of the file
     auto offset = dist(rd);
-    destFile.seek(offset);
-    srcFile.seek(offset);
+
+    if(!destFile.seek(offset) || !srcFile.seek(offset)) {
+      return false;
+    }
 
     // get the random chunk of the file
     destData = destFile.read(hashSize);
