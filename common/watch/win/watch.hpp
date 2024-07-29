@@ -39,13 +39,19 @@ class WinWatch : public IWatch {
 
  private:
   // process the file info from ReadDirectoryChangesW
-  void processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo);
-
-  // get the file name from the handle
-  QString getFileNameFromHandle(HANDLE handle) const;
+  void processFileInfo(
+    DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo,
+    QList<QPair<QString, QString>> &entryCreated, 
+    QList<QPair<QString, QString>> &entryUpdated,
+    QList<QPair<QString, QString>> &entryRemoved,
+    QList<std::tuple<QString, QString, QString>> &entryRenamed
+  );
 
   // call ReadDirectoryChangesW
   bool readDirectoryChanges(DirWatch *dir);
+
+  // get the file name from the handle
+  QString getFileNameFromHandle(HANDLE handle) const;
 
  private:
   // callback function for ReadDirectoryChangesW

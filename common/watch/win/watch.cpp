@@ -6,30 +6,33 @@
 #include "watch.hpp"
 
 namespace srilakshmikanthanp::pulldog::common {
-void WinWatch::processFileInfo(DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo) {
+void WinWatch::processFileInfo(
+  DirWatch *dir, const FILE_NOTIFY_INFORMATION *fileInfo,
+  QList<QPair<QString, QString>> &entryCreated, 
+  QList<QPair<QString, QString>> &entryUpdated,
+  QList<QPair<QString, QString>> &entryRemoved,
+  QList<std::tuple<QString, QString, QString>> &entryRenamed
+) {
   auto fileName = QString::fromWCharArray(fileInfo->FileName, fileInfo->FileNameLength / sizeof(WCHAR));
   auto filePath = QDir::cleanPath(dir->baseDir + "/" + fileName);
   auto relative = std::filesystem::relative(filePath.toStdString(), dir->baseDir.toStdString());
-  auto relQtStr = QString::fromStdString(relative.string());
-
-  // to preferred style
-  relQtStr = QDir::cleanPath(relQtStr);
+  auto relQtStr = QDir::cleanPath(QString::fromStdString(relative.string()));
 
   switch (fileInfo->Action) {
     case FILE_ACTION_MODIFIED:
-      emit fileUpdated(dir->baseDir, relQtStr);
+      entryUpdated.append(dir->baseDir, relQtStr);
       break;
     case FILE_ACTION_ADDED:
-      emit fileCreated(dir->baseDir, relQtStr);
+      entryCreated.append(dir->baseDir, relQtStr);
       break;
     case FILE_ACTION_RENAMED_OLD_NAME:
       dir->oldFileName = relQtStr;
       break;
     case FILE_ACTION_RENAMED_NEW_NAME:
-      emit fileRename(dir->baseDir, dir->oldFileName, relQtStr);
+      entryRenamed.append({dir->baseDir, dir->oldFileName, relQtStr});
       break;
     case FILE_ACTION_REMOVED:
-      emit fileRemoved(dir->baseDir, relQtStr);
+      entryRemoved.append(dir->baseDir, relQtStr);
       break;
     default:
       break;
@@ -43,7 +46,7 @@ QString WinWatch::getFileNameFromHandle(HANDLE handle) const {
 // call ReadDirectoryChangesW
 bool WinWatch::readDirectoryChanges(DirWatch *dir) {
   // Issue another call to ReadDirectoryChangesW to continue monitoring
-  if (!ReadDirectoryChangesW(
+  return ReadDirectoryChangesW(
     dir->handle,
     dir->buffer,
     sizeof(dir->buffer),
@@ -53,11 +56,8 @@ bool WinWatch::readDirectoryChanges(DirWatch *dir) {
     FILE_NOTIFY_CHANGE_CREATION,
     NULL,
     &dir->overlapped,
-    WinWatch::DirectoryChangesCallback)) {
-    return false;
-  }
-
-  return true;
+    WinWatch::DirectoryChangesCallback
+  );
 }
 
 void CALLBACK WinWatch::DirectoryChangesCallback(
@@ -65,12 +65,17 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
   DWORD numberOfBytesTransferred,
   LPOVERLAPPED overlapped
 ) {
+  // list of events for created, updated, removed and renamed
+  QList<QPair<QString, QString>> entryCreated, entryUpdated, entryRemoved;
+  QList<std::tuple<QString, QString, QString>> entryRenamed;
+
   // Get the instance of the class
   auto watcher = reinterpret_cast<WinWatch*>(overlapped->hEvent);
 
   // Identify the directory watch instance
   DirWatch *directory = nullptr;
 
+  // Find the directory instance
   for (auto dir: watcher->directories) {
     if (&dir->overlapped == overlapped) {
       directory = dir;
@@ -78,9 +83,9 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
     }
   }
 
+  // Check if the directory instance is found
   if (directory == nullptr) {
-    watcher->onError("DirectoryWatch instance not found.");
-    return;
+    return watcher->onError("DirectoryWatch instance not found.");
   }
 
   // Defer the re-issuing of ReadDirectoryChangesW
@@ -94,8 +99,7 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
   });
 
   if (errorCode != ERROR_SUCCESS) {
-    watcher->onError(QString("Error in ReadDirectoryChangesW callback: %1").arg(errorCode));
-    return;
+    return watcher->onError(QString("Error in ReadDirectoryChangesW callback: %1").arg(errorCode));
   }
 
   if (numberOfBytesTransferred == 0) {
@@ -111,7 +115,13 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
     fileInfo = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(base);
 
     // Process the file info structure
-    watcher->processFileInfo(directory, fileInfo);
+    watcher->processFileInfo(
+      directory, fileInfo,
+      entryCreated,
+      entryUpdated,
+      entryRemoved,
+      entryRenamed
+    );
 
     // Check if this is the last entry
     if (fileInfo->NextEntryOffset == 0) {
@@ -120,6 +130,29 @@ void CALLBACK WinWatch::DirectoryChangesCallback(
 
     // Move to the next entry
     base += fileInfo->NextEntryOffset;
+  }
+
+  // Emit the signals for created
+  for (auto file: entryCreated) {
+    emit watcher->pathCreated(file.first, file.second);
+  }
+
+  // Emit the signals for updated
+  for (auto file: entryUpdated) {
+    emit watcher->pathUpdated(file.first, file.second);
+  }
+
+  // Emit the signals for removed
+  for (auto file: entryRemoved) {
+    emit watcher->pathRemoved(file.first, file.second);
+  }
+
+  // Emit the signals for renamed
+  for (auto file: entryRenamed) {
+    auto dirPath = std::get<0>(file);
+    auto oldFile = std::get<1>(file);
+    auto newFile = std::get<2>(file);
+    emit watcher->pathRenamed(dirPath, oldFile, newFile);
   }
 }
 

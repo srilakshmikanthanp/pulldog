@@ -37,6 +37,13 @@ class DirectoryWatcher : public QObject {
   void fileRemoved(const QString &dir, const QString &file);
   void fileUpdated(const QString &dir, const QString &file);
 
+ signals:
+  void fileRename(
+    const QString directory,
+    const QString oldFile,
+    const QString newFile
+  );
+
  public:
   /**
    * @brief Construct a new Directory Watcher object

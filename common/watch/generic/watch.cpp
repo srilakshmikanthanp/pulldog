@@ -28,8 +28,10 @@ QString DirectoryWatcher::getPath() const {
  * @brief Poll the directory
  */
 bool DirectoryWatcher::poll() {
-  namespace fs = std::filesystem; // using namespace alias for std::filesystem
-  auto updated = false;
+  QList<QString> entryCreated, entryUpdated, entryRemoved;
+  QList<QPair<QString, QString>> entryRenamed;
+
+  namespace fs = std::filesystem;
 
   // for created and updated files
   for(const auto &file: fs::recursive_directory_iterator(path.toStdWString())) {
@@ -38,16 +40,12 @@ bool DirectoryWatcher::poll() {
 
     // infer relative path using fs::relative
     auto relPath = fs::relative(file.path(), path.toStdWString());
-    auto relStr = QString::fromStdWString(relPath.wstring());
-
-    // to preferred style
-    relStr = QDir::cleanPath(relStr);
+    auto relStr = QDir::cleanPath(QString::fromStdWString(relPath.wstring()));
 
     // if the file is not in the cache
     if(!files.contains(filePath)) {
+      entryCreated.append(relStr);
       files[filePath] = fileInfo;
-      emit fileCreated(path, relStr);
-      updated = true;
       continue;
     }
 
@@ -59,9 +57,8 @@ bool DirectoryWatcher::poll() {
 
     // if the file is updated
     if(cacheLast != fileLast || cacheSize != fileSize) {
+      entryUpdated.append(relStr);
       files[filePath] = fileInfo;
-      emit fileUpdated(path, relStr);
-      updated = true;
     }
   }
 
@@ -72,15 +69,57 @@ bool DirectoryWatcher::poll() {
       auto file = path.toStdWString();
       auto relPath = fs::relative(keyPath, file);
       auto relStr = QString::fromStdWString(relPath.wstring());
-      emit fileRemoved(path, relStr);
-      updated = true;
+      entryRemoved.append(relStr);
       it = files.erase(it);
     } else {
       ++it;
     }
   }
 
-  return updated;
+  // identify the renamed files from removed and created
+  for(auto created: entryCreated) {
+    for(auto removed: entryRemoved) {
+      auto createdPath = QDir(path).filePath(created);
+      auto removedPath = QDir(path).filePath(removed);
+
+      using functions::isSameFile;
+
+      if(isSameFile(createdPath, removedPath)) {
+        entryRenamed.append({removed, created}); break;
+      }
+    }
+  }
+
+  // remove the renamed files from removed and created
+  for(auto renamed: entryRenamed) {
+    entryCreated.removeOne(renamed.second);
+    entryRemoved.removeOne(renamed.first);
+  }
+
+  // emit the signals for created
+  for(auto file: entryCreated) {
+    emit fileCreated(path, file);
+  }
+
+  // emit the signals for updated
+  for(auto file: entryUpdated) {
+    emit fileUpdated(path, file);
+  }
+
+  // emit the signals for removed
+  for(auto file: entryRemoved) {
+    emit fileRemoved(path, file);
+  }
+
+  // emit the signals for renamed
+  for(auto file: entryRenamed) {
+    auto newFile = file.second;
+    auto oldFile = file.first;
+    emit fileRename(path, oldFile, newFile);
+  }
+
+  // return true if any change
+  return entryCreated.size() || entryUpdated.size() || entryRemoved.size();
 }
 
 // --------------------------------------------------------------------------------
@@ -126,19 +165,14 @@ void GenericWatch::poll() {
   QMutexLocker locker(&mutex);
   for(auto directory: directories) {
     auto lastPoll = directory->property(lastPollKey).toDateTime();
+    auto diff = lastPoll.msecsTo(QDateTime::currentDateTime());
     auto interval = directory->property(pollIntervalKey).toInt();
     auto dir = QDir(directory->getPath());
 
-    if(!dir.exists()) {
+    if(!dir.exists() || diff < interval) {
       continue;
     }
-
-    auto diff = lastPoll.msecsTo(QDateTime::currentDateTime());
     
-    if(diff < interval) {
-      continue;
-    }
-
     auto updated = false;
 
     try {
@@ -149,14 +183,14 @@ void GenericWatch::poll() {
     }
 
     auto time = QDateTime::currentDateTime();
-    auto newInterval = pollInterval;
+    auto nInt = pollInterval;
 
     if(!updated) {
-      newInterval = std::min(interval * 2, maxPollInterval);
+      nInt = std::min(interval * 2, maxPollInterval);
     }
 
     directory->setProperty(lastPollKey, time);
-    directory->setProperty(pollIntervalKey, newInterval);
+    directory->setProperty(pollIntervalKey, nInt);
   }
 }
 
@@ -201,6 +235,11 @@ void GenericWatch::addPath(const QString &dir, bool recursive) {
   connect(
     dirWatch, &DirectoryWatcher::fileUpdated,
     this, &GenericWatch::fileUpdated
+  );
+
+  connect(
+    dirWatch, &DirectoryWatcher::fileRename,
+    this, &GenericWatch::fileRename
   );
 
   QMutexLocker locker(&mutex);

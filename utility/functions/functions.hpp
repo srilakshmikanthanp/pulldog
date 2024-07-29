@@ -51,4 +51,10 @@ QString getFileNameFromHandle(HANDLE hFile);
  * @brief Function used to set the Os level attributes for the widget
  */
 void setPlatformAttributes(QWidget *widget);
+
+/**
+ * @brief Function used to chech the two file are same or not
+ * using file id on windows
+ */
+bool isSameFile(const QString &left, const QString &right);
 }  // namespace srilakshmikanthanp::utility
