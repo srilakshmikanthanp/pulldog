@@ -98,7 +98,7 @@ bool isUptoDateByMetaData(const QString &src, const QString &dest) {
   }
 
   // check if the file is same
-  if (destInfo.created() <= destInfo.lastModified()) {
+  if (destInfo.created() < destInfo.lastModified()) {
     return false;
   }
 
