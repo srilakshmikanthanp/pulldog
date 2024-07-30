@@ -38,6 +38,7 @@ void Controller::handleFileRename(
  * @brief Handle the copy start
  */
 void Controller::handleCopyStart(const models::Transfer &transfer) {
+  QMutexLocker locker(&eventMutex);
   this->events.enqueue([=] { this->handleCopyStart(transfer); });
 }
 
@@ -45,6 +46,7 @@ void Controller::handleCopyStart(const models::Transfer &transfer) {
  * @brief Handle the copy
  */
 void Controller::handleCopy(const models::Transfer &transfer, double progress) {
+  QMutexLocker locker(&eventMutex);
   this->events.enqueue([=] { this->handleCopy(transfer, progress); });
 }
 
@@ -52,6 +54,7 @@ void Controller::handleCopy(const models::Transfer &transfer, double progress) {
  * @brief Handle the copy end
  */
 void Controller::handleCopyEnd(const models::Transfer &transfer) {
+  QMutexLocker locker(&eventMutex);
   this->events.enqueue([=] { this->handleCopyEnd(transfer); });
 }
 
@@ -59,6 +62,7 @@ void Controller::handleCopyEnd(const models::Transfer &transfer) {
  * @brief Handle the copy canceled
  */
 void Controller::handleCopyCanceled(const models::Transfer &transfer) {
+  QMutexLocker locker(&eventMutex);
   this->events.enqueue([=] { this->handleCopyCanceled(transfer); });
 }
 
@@ -66,6 +70,7 @@ void Controller::handleCopyCanceled(const models::Transfer &transfer) {
  * @brief Handle the copy failed
  */
 void Controller::handleCopyFailed(const models::Transfer &transfer, int error) {
+  QMutexLocker locker(&eventMutex);
   this->events.enqueue([=] { this->handleCopyFailed(transfer, error); });
 }
 
