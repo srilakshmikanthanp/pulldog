@@ -39,7 +39,7 @@ void Controller::handleFileRename(
  */
 void Controller::handleCopyStart(const models::Transfer &transfer) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { this->handleCopyStart(transfer); });
+  this->events.enqueue([=] { emit copyStart(transfer); });
 }
 
 /**
@@ -47,7 +47,7 @@ void Controller::handleCopyStart(const models::Transfer &transfer) {
  */
 void Controller::handleCopy(const models::Transfer &transfer, double progress) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { this->handleCopy(transfer, progress); });
+  this->events.enqueue([=] { emit copy(transfer, progress); });
 }
 
 /**
@@ -55,7 +55,7 @@ void Controller::handleCopy(const models::Transfer &transfer, double progress) {
  */
 void Controller::handleCopyEnd(const models::Transfer &transfer) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { this->handleCopyEnd(transfer); });
+  this->events.enqueue([=] { emit copyEnd(transfer); });
 }
 
 /**
@@ -63,7 +63,7 @@ void Controller::handleCopyEnd(const models::Transfer &transfer) {
  */
 void Controller::handleCopyCanceled(const models::Transfer &transfer) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { this->handleCopyCanceled(transfer); });
+  this->events.enqueue([=] { emit copyCanceled(transfer); });
 }
 
 /**
@@ -71,7 +71,7 @@ void Controller::handleCopyCanceled(const models::Transfer &transfer) {
  */
 void Controller::handleCopyFailed(const models::Transfer &transfer, int error) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { this->handleCopyFailed(transfer, error); });
+  this->events.enqueue([=] { emit copyFailed(transfer, error); });
 }
 
 /**
@@ -79,7 +79,7 @@ void Controller::handleCopyFailed(const models::Transfer &transfer, int error) {
  */
 void Controller::processEvents() {
   for (int i = 0; i < parallelEvents && !events.isEmpty(); i++) {
-    events.dequeue().event.call();
+    events.dequeue()();
   }
 }
 
