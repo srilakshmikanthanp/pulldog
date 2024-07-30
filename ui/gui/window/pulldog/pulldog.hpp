@@ -41,10 +41,6 @@ class PullDog : public QWidget {
   QHash<models::Transfer, components::FailedTile*> failures;
   QHash<models::Transfer, components::Progress*> transfers;
 
- private:
-
-  qsizetype historyHint = 10;
-
  signals:
   /**
    * @brief signal to emit folder removed
@@ -105,16 +101,6 @@ class PullDog : public QWidget {
    * @brief Get the Destination Root
    */
   QString getDestinationRoot() const;
-
-  /**
-   * @brief set history hint
-   */
-  void setHistoryHint(qsizetype hint);
-
-  /**
-   * @brief get history hint
-   */
-  qsizetype getHistoryHint() const;
 
   /**
    * @brief Add a File Transfer

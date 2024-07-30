@@ -31,7 +31,7 @@ class Controller : public QObject {
   QMutex eventMutex;
 
  private: // Private members
-  std::atomic<int> parallelEvents = 10;
+  std::atomic<int> parallelEvents = 25;
   std::atomic<int> interval = 1000;
 
  private: // Private members

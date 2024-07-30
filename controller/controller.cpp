@@ -39,7 +39,7 @@ void Controller::handleFileRename(
  */
 void Controller::handleCopyStart(const models::Transfer &transfer) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { emit copyStart(transfer); });
+  this->events.enqueue([=] { emit onCopyStart(transfer); });
 }
 
 /**
@@ -47,7 +47,7 @@ void Controller::handleCopyStart(const models::Transfer &transfer) {
  */
 void Controller::handleCopy(const models::Transfer &transfer, double progress) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { emit copy(transfer, progress); });
+  this->events.enqueue([=] { emit onCopy(transfer, progress); });
 }
 
 /**
@@ -55,7 +55,7 @@ void Controller::handleCopy(const models::Transfer &transfer, double progress) {
  */
 void Controller::handleCopyEnd(const models::Transfer &transfer) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { emit copyEnd(transfer); });
+  this->events.enqueue([=] { emit onCopyEnd(transfer); });
 }
 
 /**
@@ -63,7 +63,7 @@ void Controller::handleCopyEnd(const models::Transfer &transfer) {
  */
 void Controller::handleCopyCanceled(const models::Transfer &transfer) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { emit copyCanceled(transfer); });
+  this->events.enqueue([=] { emit onCopyCanceled(transfer); });
 }
 
 /**
@@ -71,7 +71,7 @@ void Controller::handleCopyCanceled(const models::Transfer &transfer) {
  */
 void Controller::handleCopyFailed(const models::Transfer &transfer, int error) {
   QMutexLocker locker(&eventMutex);
-  this->events.enqueue([=] { emit copyFailed(transfer, error); });
+  this->events.enqueue([=] { emit onCopyFailed(transfer, error); });
 }
 
 /**
@@ -93,31 +93,31 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   connect(
     &worker, &common::Worker::onCopyStart,
     this, &Controller::handleCopyStart,
-    Qt::QueuedConnection
+    Qt::DirectConnection
   );
 
   connect(
     &worker, &common::Worker::onCopy,
     this, &Controller::handleCopy,
-    Qt::QueuedConnection
+    Qt::DirectConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyEnd,
     this, &Controller::handleCopyEnd,
-    Qt::QueuedConnection
+    Qt::DirectConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyCanceled,
     this, &Controller::handleCopyCanceled,
-    Qt::QueuedConnection
+    Qt::DirectConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyFailed,
     this, &Controller::handleCopyFailed,
-    Qt::QueuedConnection
+    Qt::DirectConnection
   );
 
   connect(
@@ -235,7 +235,7 @@ int Controller::getParallelEvents() const {
  * @brief set the interval
  */
 void Controller::setProcessInterval(int interval) {
-  trigger.setInterval(this->interval = interval);
+  eventProcessor.setInterval(this->interval = interval);
 }
 
 /**

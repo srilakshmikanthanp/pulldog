@@ -119,20 +119,6 @@ QString PullDog::getDestinationRoot() const {
 }
 
 /**
- * @brief set history hint
- */
-void PullDog::setHistoryHint(qsizetype hint) {
-  this->historyHint = hint;
-}
-
-/**
- * @brief get history hint
- */
-qsizetype PullDog::getHistoryHint() const {
-  return this->historyHint;
-}
-
-/**
  * @brief Add a File Transfer
  */
 void PullDog::addTransfer(const models::Transfer &transfer) {
@@ -204,8 +190,6 @@ void PullDog::onCopyEnd(const models::Transfer &transfer) {
 
   auto progress = this->transfers[transfer];
   progress->setProgress(100);
-  if (transfers.size() >= historyHint) {
-    this->removeTransfer(transfer);
-  }
+  this->removeTransfer(transfer);
 }
 }  // namespace srilakshmikanthanp::pulldog::ui::gui::window
