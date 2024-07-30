@@ -27,7 +27,8 @@
 namespace srilakshmikanthanp::pulldog {
 class Controller : public QObject {
  private: // Private members
-  QQueue<models::Transfer> events;
+  QQueue<std::function<void()>> events;
+  QMutex eventMutex;
 
  private: // Private members
   std::atomic<int> parallelEvents = 10;
@@ -39,7 +40,7 @@ class Controller : public QObject {
   QDir destinationRoot;
   common::Worker worker;
   QThread workerThread;
-  QTimer trigger;
+  QTimer eventProcessor;
 
  private:  // Just for qt
   Q_OBJECT
@@ -54,7 +55,14 @@ class Controller : public QObject {
     const QString newFile
   );
 
- private:
+ private: // handlers
+  void handleCopyStart(const models::Transfer &transfer);
+  void handleCopy(const models::Transfer &transfer, double progress);
+  void handleCopyEnd(const models::Transfer &transfer);
+  void handleCopyCanceled(const models::Transfer &transfer);
+  void handleCopyFailed(const models::Transfer &transfer, int error);
+
+ private:  // Private members
   void processEvents();
 
  signals:

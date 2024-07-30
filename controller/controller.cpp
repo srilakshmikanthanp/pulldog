@@ -15,10 +15,12 @@ void Controller::handleFileUpdate(const QString dir, const QString path) {
   auto srcFile = QDir(dir).filePath(path);
 
   // Create a key for the pending file update
-  auto key = models::Transfer(srcFile, destFile);
+  auto transfer = models::Transfer(srcFile, destFile);
 
   // add it to events
-  this->events.enqueue(key);
+  QMetaObject::invokeMethod(
+    &worker, [=] { worker.handleFileUpdate(transfer); }
+  );
 }
 
 /**
@@ -33,14 +35,46 @@ void Controller::handleFileRename(
 }
 
 /**
- * @brief Process events
+ * @brief Handle the copy start
+ */
+void Controller::handleCopyStart(const models::Transfer &transfer) {
+  this->events.enqueue([=] { this->handleCopyStart(transfer); });
+}
+
+/**
+ * @brief Handle the copy
+ */
+void Controller::handleCopy(const models::Transfer &transfer, double progress) {
+  this->events.enqueue([=] { this->handleCopy(transfer, progress); });
+}
+
+/**
+ * @brief Handle the copy end
+ */
+void Controller::handleCopyEnd(const models::Transfer &transfer) {
+  this->events.enqueue([=] { this->handleCopyEnd(transfer); });
+}
+
+/**
+ * @brief Handle the copy canceled
+ */
+void Controller::handleCopyCanceled(const models::Transfer &transfer) {
+  this->events.enqueue([=] { this->handleCopyCanceled(transfer); });
+}
+
+/**
+ * @brief Handle the copy failed
+ */
+void Controller::handleCopyFailed(const models::Transfer &transfer, int error) {
+  this->events.enqueue([=] { this->handleCopyFailed(transfer, error); });
+}
+
+/**
+ * @brief Process the events
  */
 void Controller::processEvents() {
-  for (auto i = 0; i < parallelEvents && !events.isEmpty(); i++) {
-    auto transfer = events.dequeue();
-    QMetaObject::invokeMethod(
-      &worker, [=] { worker.handleFileUpdate(transfer); }
-    );
+  for (int i = 0; i < parallelEvents && !events.isEmpty(); i++) {
+    events.dequeue().event.call();
   }
 }
 
@@ -48,36 +82,37 @@ void Controller::processEvents() {
  * @brief Construct a new Controller object
  */
 Controller::Controller(QObject *parent) : QObject(parent) {
-  connect(
-    &trigger, &QTimer::timeout,
-    this, &Controller::processEvents
-  );
-
-  this->trigger.start(interval);
-
+  // connect the signals for worker this all are large
+  // number of events so we need to store it in queue
+  // and process it in interval
   connect(
     &worker, &common::Worker::onCopyStart,
-    this, &Controller::onCopyStart
+    this, &Controller::onCopyStart,
+    Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopy,
-    this, &Controller::onCopy
+    this, &Controller::onCopy,
+    Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyEnd,
-    this, &Controller::onCopyEnd
+    this, &Controller::onCopyEnd,
+    Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyCanceled,
-    this, &Controller::onCopyCanceled
+    this, &Controller::onCopyCanceled,
+    Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyFailed,
-    this, &Controller::onCopyFailed
+    this, &Controller::onCopyFailed,
+    Qt::QueuedConnection
   );
 
   connect(
@@ -91,20 +126,23 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   // start the worker thread
   workerThread.start();
 
-  // connect the signals need to do it on watcher thread
+  // connect the signals for watcher
   connect(
     &watcher, &common::Watch::fileCreated,
-    this, &Controller::handleFileUpdate
+    this, &Controller::handleFileUpdate,
+    Qt::DirectConnection
   );
 
   connect(
     &watcher, &common::Watch::fileUpdated,
-    this, &Controller::handleFileUpdate
+    this, &Controller::handleFileUpdate,
+    Qt::DirectConnection
   );
 
   connect(
     &watcher, &common::Watch::fileRename,
-    this, &Controller::handleFileRename
+    this, &Controller::handleFileRename,
+    Qt::DirectConnection
   );
 
   connect(
@@ -127,6 +165,13 @@ Controller::Controller(QObject *parent) : QObject(parent) {
 
   // start
   watcherThread.start();
+
+  connect(
+    &eventProcessor, &QTimer::timeout,
+    this, &Controller::processEvents
+  );
+
+  this->eventProcessor.start(interval);
 }
 
 /**
