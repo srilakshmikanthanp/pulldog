@@ -78,9 +78,18 @@ void Controller::handleCopyFailed(const models::Transfer &transfer, int error) {
  * @brief Process the events
  */
 void Controller::processEvents() {
+  // lock the mutex and process the events
+  QMutexLocker locker(&eventMutex);
+
+  // process the events in parallel
   for (int i = 0; i < parallelEvents && !events.isEmpty(); i++) {
     events.dequeue()();
   }
+
+  // process the events in interval
+  QTimer::singleShot(
+    0, this, &Controller::processEvents
+  );
 }
 
 /**
@@ -171,12 +180,8 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   // start
   watcherThread.start();
 
-  connect(
-    &eventProcessor, &QTimer::timeout,
-    this, &Controller::processEvents
-  );
-
-  this->eventProcessor.start(interval);
+  // single shot timer to process the events
+  QTimer::singleShot(0, this, &Controller::processEvents);
 }
 
 /**
