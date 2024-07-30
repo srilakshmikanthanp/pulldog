@@ -92,31 +92,31 @@ Controller::Controller(QObject *parent) : QObject(parent) {
   // and process it in interval
   connect(
     &worker, &common::Worker::onCopyStart,
-    this, &Controller::onCopyStart,
+    this, &Controller::handleCopyStart,
     Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopy,
-    this, &Controller::onCopy,
+    this, &Controller::handleCopy,
     Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyEnd,
-    this, &Controller::onCopyEnd,
+    this, &Controller::handleCopyEnd,
     Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyCanceled,
-    this, &Controller::onCopyCanceled,
+    this, &Controller::handleCopyCanceled,
     Qt::QueuedConnection
   );
 
   connect(
     &worker, &common::Worker::onCopyFailed,
-    this, &Controller::onCopyFailed,
+    this, &Controller::handleCopyFailed,
     Qt::QueuedConnection
   );
 
